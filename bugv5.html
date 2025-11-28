@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VXZ UI + Dark Neon Mode</title>
+
+<style>
+    body {
+        margin: 0;
+        font-family: 'Poppins', sans-serif;
+        background: #050505;
+        color: white;
+        transition: .3s;
+    }
+
+    /* GLOBAL NEON MODE */
+    body.neon {
+        background: #0a0014;
+        color: #ffffff;
+    }
+
+    body.neon .container,
+    body.neon #loginBox {
+        border-color: #b44bff;
+        box-shadow: 0 0 25px #b44bff;
+    }
+
+    body.neon input,
+    body.neon select {
+        border-color: #b44bff;
+        background: #0d001b;
+    }
+
+    body.neon .btn {
+        background: linear-gradient(90deg,#b44bff,#ff73ff);
+        box-shadow: 0 0 15px #ff6eff;
+    }
+
+    /* HIDDEN CLASS */
+    .hidden { display: none; }
+
+    /* LOGIN PAGE */
+    #loginBox {
+        width: 90%;
+        max-width: 400px;
+        margin: 90px auto;
+        padding: 25px;
+        background: #0c0c0c;
+        border: 2px solid #6a1aff;
+        border-radius: 18px;
+        box-shadow: 0 0 20px rgba(106, 26, 255, 0.4);
+        animation: fadeIn .5s ease;
+        transition: .3s;
+    }
+
+    h2 {
+        text-align: center;
+        margin-bottom: 20px;
+        font-size: 28px;
+    }
+
+    .input-group {
+        margin-top: 15px;
+    }
+
+    .input-group label {
+        opacity: .7;
+        font-size: 14px;
+    }
+
+    .input-group input {
+        width: 100%;
+        padding: 14px;
+        margin-top: 5px;
+        font-size: 16px;
+        border-radius: 12px;
+        border: 2px solid #6a1aff;
+        background: #0f0f0f;
+        color: white;
+        transition: .3s;
+    }
+
+    .btn {
+        margin-top: 25px;
+        width: 100%;
+        padding: 15px;
+        border-radius: 12px;
+        background: linear-gradient(90deg,#6a1aff,#b44bff);
+        border: none;
+        font-size: 18px;
+        font-weight: bold;
+        color: white;
+        cursor: pointer;
+        transition: .3s;
+    }
+
+    .toggle-btn {
+        margin-top: 15px;
+        width: 100%;
+        padding: 12px;
+        border-radius: 10px;
+        background: #111;
+        border: 2px solid #6a1aff;
+        color: #6a1aff;
+        cursor: pointer;
+        font-weight: bold;
+        transition: .3s;
+    }
+
+    .toggle-btn:hover {
+        background: #6a1aff;
+        color: white;
+    }
+
+    /* MAIN PAGE */
+    #mainPage {
+        display: none;
+        animation: fadeIn .6s ease;
+    }
+
+    .container {
+        width: 90%;
+        max-width: 500px;
+        margin: 30px auto;
+        padding: 20px;
+        background: #111;
+        border: 2px solid #6a1aff;
+        border-radius: 16px;
+        box-shadow: 0 0 20px rgba(106, 26, 255, 0.4);
+        transition: .3s;
+    }
+
+    .header img {
+        width: 100%;
+        border-radius: 12px;
+        border: 2px solid #6a1aff;
+        transition: .3s;
+    }
+
+    h1 {
+        text-align: center;
+        margin-top: 18px;
+        font-size: 28px;
+    }
+
+    select {
+        width: 100%;
+        padding: 14px;
+        border-radius: 12px;
+        border: 2px solid #6a1aff;
+        background: #0f0f0f;
+        color: white;
+        font-size: 16px;
+        margin-top: 8px;
+        transition: .3s;
+    }
+
+    .footer-text {
+        text-align: center;
+        opacity: .6;
+        margin-top: 15px;
+        font-size: 12px;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+</head>
+
+<body>
+
+<!-- ================= LOGIN PAGE ================= -->
+<div id="loginPage">
+    <div id="loginBox">
+        <h2>LOGIN VXZ</h2>
+
+        <div class="input-group">
+            <label>Username</label>
+            <input id="username" type="text" placeholder="Masukkan username">
+        </div>
+
+        <div class="input-group">
+            <label>Password</label>
+            <input id="password" type="password" placeholder="Masukkan password">
+        </div>
+
+        <button class="btn" onclick="login()">LOGIN</button>
+        <button class="toggle-btn" onclick="toggleNeon()">NEON MODE</button>
+
+        <p class="footer-text">untul dapat login wa.me//6285126648043.</p>
+    </div>
+</div>
+
+<!-- ================= MAIN PAGE ================= -->
+<div id="mainPage">
+    <div class="container">
+        <div class="header">
+            <img src="IMAGE.jpg" alt="Header">
+        </div>
+
+        <h1>CONNECT</h1>
+
+        <div class="input-group">
+            <label>Target Number</label>
+            <input type="text" placeholder="628xxxxxxx">
+        </div>
+
+        <div class="input-group">
+            <label>Select Bug CONNECT</label>
+            <select>
+                <option>Pilih Type Bug</option>
+                <option>KENON PERMANEN</option>
+                <option>AUTO RESET</option>
+                <option>BLANK LAYAR</option>
+            </select>
+        </div>
+
+        <button class="btn" onclick="sendBug()">GASS</button>
+        <button class="toggle-btn" onclick="toggleNeon()">MODE KEREN</button>
+
+        <p class="footer-text">Fitur super berbahaya.</p>
+    </div>
+</div>
+
+<script>
+function login() {
+    let user = document.getElementById("username").value;
+    let pass = document.getElementById("password").value;
+
+    if (user === "" || pass === "") {
+        alert("Isi semua data dulu!");
+        return;
+    }
+
+    if (user === "admin" && pass === "123") {
+        document.getElementById("loginPage").style.display = "none";
+        document.getElementById("mainPage").style.display = "block";
+    } else {
+        alert("Username atau password salah!");
+    }
+}
+
+function sendBug() {
+    alert("Berhasil Terkirim.");
+}
+
+function toggleNeon() {
+    document.body.classList.toggle("neon");
+}
+</script>
+
+</body>
+</html>
