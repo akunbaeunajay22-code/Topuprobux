@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top Up Robux - Aman & Cepat</title>
+
+    <style>
+        body {
+            margin: 0;
+            background: #f5f7fa;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .navbar {
+            background: #16a34a;
+            padding: 15px;
+            color: white;
+            font-size: 20px;
+            text-align: center;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .container {
+            width: 90%;
+            max-width: 650px;
+            margin: 20px auto;
+        }
+
+        .search-box {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 14px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            font-size: 15px;
+        }
+
+        h3 {
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .stock {
+            color: #16a34a;
+            font-weight: bold;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .card {
+            background: white;
+            padding: 18px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            cursor: pointer;
+            transition: 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .card:hover {
+            transform: scale(1.03);
+        }
+
+        .card.selected {
+            border-color: #16a34a;
+            background: #dcfce7;
+        }
+
+        .price {
+            font-weight: 600;
+            font-size: 17px;
+            color: #111;
+        }
+
+        .label {
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        .buy-section {
+            margin-top: 25px;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .total {
+            font-size: 20px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: #16a34a;
+            color: white;
+            font-size: 17px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        .btn:hover {
+            background: #128c3e;
+        }
+
+        .garansi {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #444;
+        }
+
+        /* METODE PEMBAYARAN */
+        .payment-box {
+            margin-top: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .payment-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .payment-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .pay-method {
+            background: #f2f4f7;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            border: 2px solid transparent;
+            transition: 0.2s;
+        }
+
+        .pay-method:hover {
+            background: #e5f7eb;
+            border-color: #16a34a;
+            transform: scale(1.05);
+        }
+
+        .pay-method.selected {
+            background: #dcfce7;
+            border-color: #16a34a;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="navbar">Top Up Robux • Aman & Cepat</div>
+
+<div class="container">
+
+    <!-- INPUT USERNAME -->
+    <div class="search-box">
+        <h3>Masukkan Username Roblox</h3>
+        <input type="text" placeholder="Ketik username di sini..." id="username">
+    </div>
+
+    <!-- NOMINAL ROBUX -->
+    <h3>Nominal Robux • <span class="stock">186.780 Stok Tersedia</span></h3>
+
+    <div class="grid" id="robuxGrid">
+        <div class="card" data-price="13500"><div class="label">100 Robux</div><div class="price">Rp13.500</div></div>
+        <div class="card" data-price="27000"><div class="label">200 Robux</div><div class="price">Rp27.000</div></div>
+        <div class="card" data-price="40500"><div class="label">300 Robux</div><div class="price">Rp40.500</div></div>
+        <div class="card" data-price="54000"><div class="label">400 Robux</div><div class="price">Rp54.000</div></div>
+        <div class="card" data-price="67200"><div class="label">500 Robux</div><div class="price">Rp67.200</div></div>
+        <div class="card" data-price="80400"><div class="label">600 Robux</div><div class="price">Rp80.400</div></div>
+        <div class="card" data-price="93800"><div class="label">700 Robux</div><div class="price">Rp93.800</div></div>
+        <div class="card" data-price="107200"><div class="label">800 Robux</div><div class="price">Rp107.200</div></div>
+        <div class="card" data-price="120600"><div class="label">900 Robux</div><div class="price">Rp120.600</div></div>
+        <div class="card" data-price="134000"><div class="label">1000 Robux</div><div class="price">Rp134.000</div></div>
+    </div>
+
+    <!-- METODE PEMBAYARAN -->
+    <div class="payment-box">
+        <div class="payment-title">Metode Pembayaran</div>
+
+        <div class="payment-grid" id="paymentGrid">
+            <div class="pay-method">BAYAR</div>
+            <div class="pay-method">UNKNOW</div>
+            <div class="pay-method">UNKNOW</div>
+            <div class="pay-method">UNKNOW</div>
+            <div class="pay-method">UNKNOW</div>
+            <div class="pay-method">UNKNOW</div>
+            <div class="pay-method">UNKNOW</div>
+            <div class="pay-method">UNKNOW</div>
+            <div class="pay-method">UNKNOW</div>
+        </div>
+    </div>
+
+    <!-- TOTAL & BELI -->
+    <div class="buy-section">
+        <div class="total" id="totalHarga">Total: Rp0</div>
+        <button class="btn" id="payBtn">Lanjutkan Pembelian</button>
+        <div class="garansi">✔ Garansi 100% Robux Masuk & Aman</div>
+    </div>
+
+</div>
+
+<script>
+/* --- PILIH NOMINAL ROBUX --- */
+const cards = document.querySelectorAll(".card");
+const totalHarga = document.getElementById("totalHarga");
+
+cards.forEach(card => {
+    card.addEventListener("click", () => {
+        cards.forEach(c => c.classList.remove("selected"));
+        card.classList.add("selected");
+
+        let price = card.getAttribute("data-price");
+        totalHarga.textContent = "Total: Rp" + Number(price).toLocaleString("id-ID");
+    });
+});
+
+/* --- PILIH METODE PEMBAYARAN --- */
+const methods = document.querySelectorAll(".pay-method");
+
+methods.forEach(btn => {
+    btn.addEventListener("click", () => {
+        methods.forEach(b => b.classList.remove("selected"));
+        btn.classList.add("selected");
+    });
+});
+
+/* --- LINK PEMBAYARAN --- */
+const paymentLinks = {
+    "BAYAR": "https://whatsapp.com/channel/0029VbByZb7Fy72Jf8wnEc3l",
+    "UNKNOW": "",
+    "UNKNOW": "",
+    "UNKNOW": "",
+    "UNKNOW": "",
+    "UNKNOW": "",
+    "UNKNOW": "",
+    "UNKNOW": "",
+    "UNKNOW": ""
+};
+
+document.getElementById("payBtn").addEventListener("click", () => {
+    const selectedMethod = document.querySelector(".pay-method.selected");
+    const selectedRobux = document.querySelector(".card.selected");
+    const username = document.getElementById("username").value;
+
+    if (!username) {
+        alert("Masukkan username Roblox dulu!");
+        return;
+    }
+
+    if (!selectedRobux) {
+        alert("Pilih nominal Robux terlebih dahulu!");
+        return;
+    }
+
+    if (!selectedMethod) {
+        alert("Pilih metode pembayaran!");
+        return;
+    }
+
+    let method = selectedMethod.textContent.trim();
+    let link = paymentLinks[method];
+
+    window.location.href = link;
+});
+</script>
+
+</body>
+</html>
