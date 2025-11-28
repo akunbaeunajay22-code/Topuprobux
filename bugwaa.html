@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CONNECT OWN</title>
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+
+    body {
+        margin: 0;
+        background: #000;
+        font-family: 'Poppins', sans-serif;
+        color: #fff;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+    }
+
+    /* BACKGROUND NEON ANIMATED */
+    .bg {
+        position: absolute;
+        width: 250%;
+        height: 250%;
+        background: radial-gradient(circle, #6a00ff33, #000000 70%);
+        animation: rotate 20s linear infinite;
+        z-index: -1;
+    }
+
+    @keyframes rotate {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .title {
+        text-align: center;
+        font-size: 50px;
+        margin-bottom: 25px;
+        font-weight: 600;
+        text-shadow: 0 0 15px #8a00ff, 0 0 30px #b300ff;
+    }
+
+    .title span {
+        color: #b900ff;
+        text-shadow: 0 0 20px #ff00ff, 0 0 35px #c300ff;
+    }
+
+    .container {
+        width: 90%;
+        max-width: 420px;
+        border: 2px solid #9600ff;
+        padding: 25px;
+        border-radius: 20px;
+        background: rgba(15, 0, 25, 0.5);
+        box-shadow: 0 0 25px #7a00ff, inset 0 0 15px #300050;
+        animation: glow 3s infinite alternate;
+    }
+
+    @keyframes glow {
+        from { box-shadow: 0 0 25px #7a00ff, inset 0 0 10px #300050; }
+        to   { box-shadow: 0 0 40px #b300ff, inset 0 0 20px #300050; }
+    }
+
+    label {
+        font-size: 14px;
+        display: block;
+        margin-bottom: 6px;
+    }
+
+    input, select {
+        width: 100%;
+        padding: 12px;
+        border-radius: 12px;
+        border: 2px solid #7e00ff;
+        background: rgba(0, 0, 0, 0.3);
+        color: #fff;
+        margin-bottom: 18px;
+        font-size: 14px;
+        transition: 0.3s;
+        outline: none;
+        box-shadow: inset 0 0 10px #300050;
+    }
+
+    input:focus, select:focus {
+        border-color: #d000ff;
+        box-shadow: 0 0 15px #c300ff, inset 0 0 10px #500070;
+    }
+
+    button {
+        width: 100%;
+        padding: 14px;
+        border: none;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        background: linear-gradient(to right, #d200ff, #7a00ff);
+        color: #fff;
+        cursor: pointer;
+        transition: .25s;
+        box-shadow: 0 0 15px #c000ff;
+    }
+
+    button:hover {
+        transform: scale(1.03);
+        box-shadow: 0 0 25px #ff00ff;
+    }
+</style>
+</head>
+<body>
+
+<div class="bg"></div>
+
+<div>
+    <div class="title">Jindoy<span>Store</span></div>
+
+    <div class="container">
+        <label>Target Number</label>
+        <input type="text" id="target" placeholder="MASUKAN NO TARGET">
+
+        <label>Select Bug CONNECT OWN V2</label>
+        <select id="bugtype">
+            <option>KENON PERMANEN</option>
+            <option>FREEZE LAG</option>
+            <option>SPAM POPUP</option>
+            <option>TEST MODE ONLY</option>
+        </select>
+
+        <button id="btn">KIRIM BUG</button>
+    </div>
+</div>
+
+<script>
+/* SUARA CLICK (BASE64, TANPA FILE TAMBAHAN) */
+const clickSound = new Audio(
+    "data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAA..."
+);
+
+/* BUTTON EVENT */
+document.getElementById("btn").addEventListener("click", () => {
+    clickSound.currentTime = 0;
+    clickSound.play();
+    sendBug();
+});
+
+/* POPUP SIMULASI */
+function sendBug() {
+    let target = document.getElementById("target").value;
+    let bug = document.getElementById("bugtype").value;
+
+    if (target.trim() === "") {
+        alert("Masukkan nomor target terlebih dahulu!");
+        return;
+    }
+
+    alert(
+        "Berhasil!\n\n" +
+        "Target: " + target + "\n" +
+        "Mode: " + bug + "\n\n" +
+        "BERHASIL."
+    );
+}
+</script>
+
+</body>
+</html>
