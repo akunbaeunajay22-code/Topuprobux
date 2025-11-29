@@ -1,0 +1,243 @@
+<!-- index.html
+  Mockup aman dari UI pada gambar — HANYA front-end visual & simulasi.
+  TIDAK melakukan panggilan jaringan, TIDAK melakukan exploit atau kirim apa pun.
+  Untuk belajar / demo tampilan saja.
+-->
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Cyber UI — Mockup</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@300;400;700&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg1:#070617;
+    --bg2:#0f1630;
+    --neon:#8fb0ff;
+    --accent:#b78cff;
+    --glass: rgba(255,255,255,0.04);
+    --glass-2: rgba(255,255,255,0.03);
+    --outline: rgba(255,255,255,0.12);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:Roboto, sans-serif;background:linear-gradient(180deg,var(--bg1),var(--bg2));color:#e6eefb}
+  .wrap{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:32px;
+    position:relative;
+    overflow:hidden;
+  }
+
+  /* moving background beams */
+  .wrap::before, .wrap::after{
+    content:"";
+    position:absolute;
+    inset:-20%;
+    background:radial-gradient(circle at 20% 20%, rgba(143,176,255,0.06), transparent 12%),
+               radial-gradient(circle at 80% 80%, rgba(183,140,255,0.05), transparent 10%);
+    pointer-events:none;
+    filter:blur(40px);
+    animation: drift 12s linear infinite;
+  }
+  .wrap::after{animation-direction:reverse; opacity:0.6}
+  @keyframes drift{from{transform:translateX(-5%)}to{transform:translateX(5%)}}
+
+  /* container card */
+  .card{
+    width:380px;
+    max-width:92vw;
+    border-radius:18px;
+    padding:22px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    box-shadow: 0 8px 30px rgba(2,6,23,0.7), inset 0 1px 0 rgba(255,255,255,0.02);
+    border:1px solid rgba(255,255,255,0.04);
+    backdrop-filter: blur(6px) saturate(140%);
+    position:relative;
+    overflow:hidden;
+  }
+
+  /* profile top */
+  .profile{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+    padding:10px 6px;
+    border-radius:12px;
+    margin-bottom:16px;
+    border:1px solid rgba(255,255,255,0.03);
+    background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));
+  }
+  .avatar{
+    width:86px;height:86px;border-radius:50%;
+    background:linear-gradient(180deg,#1b2340,#101426);
+    border:2px solid rgba(143,176,255,0.12);
+    display:flex;align-items:center;justify-content:center;
+    font-family:Orbitron, sans-serif;color:var(--neon);
+    box-shadow:0 6px 20px rgba(11,14,30,0.6), inset 0 -6px 24px rgba(0,0,0,0.6);
+  }
+  .name{font-family:Orbitron, sans-serif; letter-spacing:0.6px; color: #cfe4ff; font-size:20px}
+  .meta{font-size:12px; color:rgba(230,238,251,0.6); letter-spacing:1px; font-family:monospace;}
+  .meta span{opacity:0.9}
+
+  /* section */
+  .section{margin-top:12px;padding:14px;border-radius:12px;background:linear-gradient(180deg,var(--glass),var(--glass-2));border:1px solid rgba(255,255,255,0.03)}
+  .label{font-family:Orbitron, sans-serif; color:rgba(200,220,255,0.85); font-size:16px; margin-bottom:8px}
+  .input{
+    width:100%; padding:14px 16px;border-radius:12px;border:1px solid rgba(255,255,255,0.06);
+    background:linear-gradient(180deg, rgba(255,255,255,0.012), rgba(255,255,255,0.006));
+    color:#eaf4ff; outline:none; font-size:14px; letter-spacing:0.6px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.01);
+    transition:box-shadow .18s, transform .12s;
+  }
+  .input:focus{box-shadow:0 0 18px rgba(143,176,255,0.06); transform:translateY(-1px)}
+
+  .select{
+    position:relative;
+  }
+  .select select{
+    appearance:none; -webkit-appearance:none; -moz-appearance:none;
+    width:100%; padding:14px 16px;border-radius:12px;border:1px solid rgba(255,255,255,0.06);
+    background:transparent; color:#eaf4ff; font-size:14px; font-family:inherit;
+  }
+  .select::after{
+    content:"▾"; position:absolute; right:14px; top:50%; transform:translateY(-50%); color:rgba(230,238,251,0.6)
+  }
+
+  /* send button */
+  .sendWrap{margin-top:18px; display:flex; gap:12px; align-items:center; flex-direction:column}
+  .btn{
+    width:100%; padding:16px 18px; border-radius:14px; border:1px solid rgba(255,255,255,0.04);
+    background:linear-gradient(180deg, rgba(200,220,255,0.04), rgba(200,220,255,0.02));
+    color:#0b0f1a; font-weight:700; font-family:Orbitron; letter-spacing:1px;
+    position:relative; overflow:hidden; cursor:pointer;
+  }
+  .btn .label{color: #0b0f1a}
+  .btn.neon{
+    color: #eaf4ff; background:linear-gradient(90deg,#111428,#12122b);
+    border: 1px solid rgba(143,176,255,0.12);
+    box-shadow: 0 6px 28px rgba(143,176,255,0.04), 0 0 18px rgba(143,176,255,0.02) inset;
+  }
+
+  /* progress + toast */
+  .progress{
+    width:0%; height:6px; border-radius:6px; background:linear-gradient(90deg,var(--neon),var(--accent));
+    transition:width .5s linear;
+    margin-top:8px; box-shadow:0 6px 18px rgba(0,0,0,0.6);
+  }
+  .toast{
+    position:fixed; left:50%; transform:translateX(-50%); bottom:32px;
+    background: rgba(10,12,20,0.9); color:#dff0ff; padding:12px 18px; border-radius:10px; font-size:13px;
+    border:1px solid rgba(143,176,255,0.07); display:none;
+  }
+
+  /* footer small */
+  .hint{font-size:12px;color:rgba(230,238,251,0.45); margin-top:10px; text-align:center}
+  /* small screens adjustments */
+  @media (max-width:420px){
+    .card{padding:16px}
+    .name{font-size:18px}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card" role="main" aria-label="Demo UI mockup">
+      <div class="profile" aria-hidden="false">
+        <div class="avatar">ONLINE</div>
+        <div class="name">CONNECT</div>
+        <div class="meta">Role: <span>RESELLER</span> · Exp: <span>2026-02-11</span></div>
+      </div>
+
+      <div class="section">
+        <div class="label">Target Number</div>
+        <input class="input" id="phone" placeholder="+62xxxxxxxxxx" inputmode="tel" maxlength="20" />
+      </div>
+
+      <div class="section" style="margin-top:12px">
+        <div class="label">Select Bug</div>
+        <div class="select">
+          <select id="bug">
+            <option>JUMSCERR TARGET</option>
+            <option>KENON PERMANEN</option>
+            <option>RESET PABRIK</option>
+            <option>BLANK SUPER</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="sendWrap">
+        <button id="sendBtn" class="btn neon" aria-live="polite">⚙ SEND BUG</button>
+        <div class="progress" id="progress" aria-hidden="true"></div>
+        <div class="hint">DEVELOPER :https://wa.me//6285126648043 .</div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-atomic="true"></div>
+  </div>
+
+<script>
+  // SAFE SIMULATION ONLY
+  const btn = document.getElementById('sendBtn');
+  const phone = document.getElementById('phone');
+  const bug = document.getElementById('bug');
+  const prog = document.getElementById('progress');
+  const toast = document.getElementById('toast');
+
+  function showToast(msg, time=3200){
+    toast.textContent = msg;
+    toast.style.display = 'block';
+    toast.style.opacity = '1';
+    clearTimeout(toast._t);
+    toast._t = setTimeout(()=>{ toast.style.display='none'; }, time);
+  }
+
+  function maskPhone(p){
+    if(!p) return '(no number)';
+    // mask middle digits for privacy
+    return p.replace(/(\+?\d{2,4})(\d{3,6})(\d{2,4})/, function(_, a,b,c){
+      return a + '•'.repeat(Math.max(4,b.length)) + c;
+    });
+  }
+
+  btn.addEventListener('click', ()=>{
+    const val = phone.value.trim();
+    // validation only cosmetic
+    if(!val || !/^\+?\d{6,}$/.test(val)){
+      showToast('Masukkan nomor target yang valid (format: +62...)');
+      return;
+    }
+
+    // simulate progress steps
+    prog.style.width = '0%';
+    prog.style.display = 'block';
+    let steps = [20, 45, 70, 95, 100];
+    let i = 0;
+    showToast('Loading...', 1200);
+
+    const interval = setInterval(()=>{
+      prog.style.width = steps[i] + '%';
+      i++;
+      if(i >= steps.length){
+        clearInterval(interval);
+        // simulate result (always a harmless fake)
+        setTimeout(()=>{
+          prog.style.width = '0%';
+          showToast('Succes terkirim: ' + maskPhone(val));
+        }, 600);
+      }
+    }, 800);
+  });
+
+  // keyboard: Enter triggers
+  phone.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') btn.click(); });
+
+  // Accessibility: announce selection change
+  bug.addEventListener('change', ()=> showToast('Mode: ' + bug.value, 1000));
+</script>
+</body>
+</html>
