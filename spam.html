@@ -1,0 +1,246 @@
+/*
+One-file WhatsApp Cloud API Auto Sender
+Save this file as: wa-auto-send-onefile-server.js
+
+Requirements:
+  npm init -y
+  npm install express axios dotenv body-parser multer
+
+.env file:
+  WHATSAPP_TOKEN=JESTIN12
+  WHATSAPP_PHONE_ID=6285126648043
+  PORT=3000
+
+Run:
+  node wa-auto-send-onefile-server.js
+
+This file serves a small web UI (/) to send text/image/document and includes
+backend endpoints to call the official WhatsApp Cloud API.
+*/
+
+require('dotenv').config();
+const express = require('express');
+const axios = require('axios');
+const bodyParser = require('body-parser');
+const path = require('path');
+
+const app = express();
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+const TOKEN = process.env.WHATSAPP_TOKEN || '';
+const PHONE_ID = process.env.WHATSAPP_PHONE_ID || '';
+const PORT = process.env.PORT || 3000;
+const GRAPH_URL = `https://graph.facebook.com/v19.0/${PHONE_ID}/messages`;
+
+if (!TOKEN || !PHONE_ID) {
+  console.warn('\n⚠️ WARNING: WHATSAPP_TOKEN and/or WHATSAPP_PHONE_ID are not set in .env.\nFill them before sending messages.');
+}
+
+// Serve a single-page UI
+app.get('/', (req, res) => {
+  res.type('html').send(`<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>WA Auto Sender — One File</title>
+<style>
+  body{font-family:Inter,Segoe UI,Arial;margin:0;background:#0f1720;color:#e6eef8}
+  .wrap{max-width:900px;margin:32px auto;padding:20px;background:#071024;border-radius:12px;box-shadow:0 8px 30px rgba(2,6,23,.6)}
+  h1{margin:0 0 12px;font-size:20px}
+  label{display:block;margin-top:12px;font-size:13px}
+  input[type=text],textarea,select{width:100%;padding:10px;margin-top:6px;border-radius:8px;border:1px solid #123;background:#041427;color:#eaf6ff}
+  button{margin-top:10px;padding:10px 14px;border-radius:8px;border:0;background:#0ea5a4;color:#012;cursor:pointer}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .note{font-size:12px;color:#9fb4c9;margin-top:8px}
+  pre{background:#021426;padding:10px;border-radius:8px;overflow:auto}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>WA Auto Sender — One File (WhatsApp Cloud API)</h1>
+    <p class="note">Pastikan <strong>WHATSAPP_TOKEN</strong> dan <strong>WHATSAPP_PHONE_ID</strong> sudah diisi di file <code>.env</code>.</p>
+
+    <form id="textForm">
+      <label>Nomor tujuan (contoh: 6281234567890)</label>
+      <input name="to" type="text" required placeholder="628..." />
+      <label>Pesan teks</label>
+      <textarea name="message" rows="3" placeholder="Isi pesan..."></textarea>
+      <button type="submit">Kirim Teks</button>
+      <div id="textRes" class="note"></div>
+    </form>
+
+    <hr />
+
+    <form id="imageForm">
+      <label>Nomor tujuan</label>
+      <input name="to" type="text" required placeholder="628..." />
+      <label>URL Gambar (harus dapat diakses publik)</label>
+      <input name="imageUrl" type="text" placeholder="https://...jpg" />
+      <label>Caption (opsional)</label>
+      <input name="caption" type="text" placeholder="Caption..." />
+      <button type="submit">Kirim Gambar</button>
+      <div id="imageRes" class="note"></div>
+    </form>
+
+    <hr />
+
+    <form id="fileForm">
+      <label>Nomor tujuan</label>
+      <input name="to" type="text" required placeholder="628..." />
+      <label>URL File / PDF / DOC</label>
+      <input name="fileUrl" type="text" placeholder="https://...pdf" />
+      <label>Caption (opsional)</label>
+      <input name="caption" type="text" placeholder="Caption..." />
+      <button type="submit">Kirim File</button>
+      <div id="fileRes" class="note"></div>
+    </form>
+
+    <hr />
+    <h3>Auto Send Example</h3>
+    <div class="row">
+      <div>
+        <label>Nomor tujuan</label>
+        <input id="autoTo" type="text" placeholder="628..." />
+      </div>
+      <div>
+        <label>Pesan</label>
+        <input id="autoMsg" type="text" placeholder="Pesan otomatis" />
+      </div>
+    </div>
+    <button id="autoBtn">Kirim Otomatis Sekali</button>
+    <button id="massBtn">Kirim Massal (contoh 3 nomor)</button>
+    <div id="autoRes" class="note"></div>
+
+    <hr />
+    <h3>Instruksi</h3>
+    <ol>
+      <li>Isi <code>.env</code> dengan token dan phone id.</li>
+      <li>Jalankan: <code>node wa-auto-send-onefile-server.js</code></li>
+      <li>Buka browser ke <code>http://localhost:3000</code></li>
+    </ol>
+
+    <hr />
+    <small class="note">Catatan: WhatsApp Cloud API memerlukan nomor target menerima pesan dari akun bisnismu atau tidak memblokirnya. Pastikan penggunaan sesuai kebijakan Meta dan hukum setempat.</small>
+  </div>
+
+<script>
+async function postJson(url, data){
+  try{
+    const res = await fetch(url, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)
+    });
+    return await res.json();
+  }catch(e){ return { error: e.message } }
+}
+
+// Text
+document.getElementById('textForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const f = e.target; const to = f.to.value.trim(); const message = f.message.value.trim();
+  document.getElementById('textRes').textContent = 'Mengirim...';
+  const r = await postJson('/send-text',{to,message});
+  document.getElementById('textRes').textContent = JSON.stringify(r);
+});
+// Image
+document.getElementById('imageForm').addEventListener('submit', async (e)=>{
+  e.preventDefault(); const f=e.target; const to=f.to.value.trim(); const imageUrl=f.imageUrl.value.trim(); const caption=f.caption.value.trim();
+  document.getElementById('imageRes').textContent = 'Mengirim...';
+  const r = await postJson('/send-image',{to,imageUrl,caption});
+  document.getElementById('imageRes').textContent = JSON.stringify(r);
+});
+// File
+document.getElementById('fileForm').addEventListener('submit', async (e)=>{
+  e.preventDefault(); const f=e.target; const to=f.to.value.trim(); const fileUrl=f.fileUrl.value.trim(); const caption=f.caption.value.trim();
+  document.getElementById('fileRes').textContent = 'Mengirim...';
+  const r = await postJson('/send-file',{to,fileUrl,caption});
+  document.getElementById('fileRes').textContent = JSON.stringify(r);
+});
+
+// Auto
+document.getElementById('autoBtn').addEventListener('click', async ()=>{
+  const to = document.getElementById('autoTo').value.trim(); const message = document.getElementById('autoMsg').value.trim();
+  document.getElementById('autoRes').textContent = 'Mengirim...';
+  const r = await postJson('/auto',{to,message});
+  document.getElementById('autoRes').textContent = JSON.stringify(r);
+});
+
+// Mass send (demo - replace with your list)
+document.getElementById('massBtn').addEventListener('click', async ()=>{
+  const demoList = ['6281111111111','6282222222222','6283333333333'];
+  document.getElementById('autoRes').textContent = 'Mengirim massal ke 3 nomor (demo)...';
+  const results = [];
+  for(const to of demoList){
+    const r = await postJson('/send-text',{to,message:'Pesan massal demo dari server'});
+    results.push({to,r});
+  }
+  document.getElementById('autoRes').textContent = JSON.stringify(results);
+});
+</script>
+</body>
+</html>
+  `);
+});
+
+// Backend endpoints
+app.post('/send-text', async (req, res) => {
+  const { to, message } = req.body;
+  if (!to || !message) return res.status(400).json({ error: 'Missing to or message' });
+  try{
+    const r = await axios.post(GRAPH_URL, {
+      messaging_product: 'whatsapp', to, type: 'text', text: { body: message }
+    }, { headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' } });
+    res.json({ success: true, data: r.data });
+  }catch(err){
+    const detail = err.response && err.response.data ? err.response.data : { message: err.message };
+    res.status(400).json({ success:false, error: detail });
+  }
+});
+
+app.post('/send-image', async (req, res) => {
+  const { to, imageUrl, caption } = req.body;
+  if (!to || !imageUrl) return res.status(400).json({ error: 'Missing to or imageUrl' });
+  try{
+    const r = await axios.post(GRAPH_URL, {
+      messaging_product: 'whatsapp', to, type: 'image', image: { link: imageUrl, caption: caption || '' }
+    }, { headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' } });
+    res.json({ success:true, data: r.data });
+  }catch(err){
+    const detail = err.response && err.response.data ? err.response.data : { message: err.message };
+    res.status(400).json({ success:false, error: detail });
+  }
+});
+
+app.post('/send-file', async (req, res) => {
+  const { to, fileUrl, caption } = req.body;
+  if (!to || !fileUrl) return res.status(400).json({ error: 'Missing to or fileUrl' });
+  try{
+    const r = await axios.post(GRAPH_URL, {
+      messaging_product: 'whatsapp', to, type: 'document', document: { link: fileUrl, caption: caption || '' }
+    }, { headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' } });
+    res.json({ success:true, data: r.data });
+  }catch(err){
+    const detail = err.response && err.response.data ? err.response.data : { message: err.message };
+    res.status(400).json({ success:false, error: detail });
+  }
+});
+
+// Auto single send (UI uses this)
+app.post('/auto', async (req, res) => {
+  const { to, message } = req.body;
+  if (!to || !message) return res.status(400).json({ error: 'Missing to or message' });
+  try{
+    const r = await axios.post(GRAPH_URL, {
+      messaging_product: 'whatsapp', to, type: 'text', text: { body: message }
+    }, { headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' } });
+    res.json({ success:true, data: r.data });
+  }catch(err){
+    const detail = err.response && err.response.data ? err.response.data : { message: err.message };
+    res.status(400).json({ success:false, error: detail });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`WA Auto Sender berjalan pada http://localhost:${PORT}`);
+});
