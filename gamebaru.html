@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Game Pesawat Tempur + Shop + Pause</title>
+<style>
+    body {
+        margin: 0;
+        overflow: hidden;
+        background: #000;
+        touch-action: none;
+        color: white;
+        font-family: Arial;
+        transition: 0.1s;
+    }
+    #game {
+        display: block;
+    }
+
+    /* BACKGROUND */
+    #bg1, #bg2 {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url("space_bg.jpg");
+        background-size: cover;
+        background-position: center;
+        z-index: -2;
+    }
+    #bg2 { top: -100%; }
+
+    #ui {
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        font-size: 20px;
+        text-shadow: 0 0 6px cyan;
+        z-index: 10;
+    }
+
+    /* SKIN PANEL */
+    #skinPanel {
+        position: fixed;
+        top: 60px;
+        left: 10px;
+        background: rgba(0,0,20,0.8);
+        border: 2px solid cyan;
+        padding: 10px;
+        display: none;
+        z-index: 10;
+    }
+    #skinPanel img {
+        width: 80px;
+        margin: 5px;
+        border: 2px solid transparent;
+        cursor: pointer;
+    }
+    #skinPanel img:hover {
+        border: 2px solid cyan;
+    }
+
+    #btnSkin, #btnShop, #btnPause {
+        position: fixed;
+        top: 10px;
+        padding: 8px 14px;
+        background: rgba(0,255,255,0.2);
+        border: 1px solid cyan;
+        border-radius: 6px;
+        color: cyan;
+        cursor: pointer;
+        font-size: 18px;
+        z-index: 11;
+    }
+
+    #btnSkin { right: 10px; }
+    #btnShop { right: 120px; }
+    #btnPause { right: 230px; }
+
+    /* SHOP PANEL */
+    #shopPanel {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        width: 220px;
+        background: rgba(0,0,20,0.9);
+        border: 2px solid lime;
+        padding: 10px;
+        display: none;
+        z-index: 20;
+    }
+    #shopPanel button {
+        width: 100%;
+        margin: 6px 0;
+        padding: 8px;
+        background: rgba(0,255,0,0.2);
+        border: 1px solid lime;
+        color: lime;
+        cursor: pointer;
+        border-radius: 6px;
+    }
+
+    /* RED FLASH EFFECT */
+    @keyframes redFlash {
+        0% { background: rgba(255,0,0,0.6); }
+        100% { background: rgba(255,0,0,0); }
+    }
+
+    #hitFlash {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        background: transparent;
+        z-index: 20;
+    }
+</style>
+</head>
+
+<body>
+
+<div id="hitFlash"></div>
+
+<div id="bg1"></div>
+<div id="bg2"></div>
+
+<div id="ui">
+    HP: <span id="hp">5</span><br>
+    Coin: <span id="coin">0</span>
+</div>
+
+<button id="btnPause">❚❚</button>
+<button id="btnShop">Shop</button>
+<button id="btnSkin">Ganti Skin</button>
+
+<!-- SKIN PANEL -->
+<div id="skinPanel">
+    <div style="font-size:18px;margin-bottom:5px;">Pilih Skin:</div>
+    <img src="jet_blue.png" data-id="0">
+    <img src="jet_red.png" data-id="1">
+    <img src="jet_anime.png" data-id="2">
+</div>
+
+<!-- SHOP PANEL -->
+<div id="shopPanel">
+    <div style="font-size:18px;color:lime;margin-bottom:5px;">Toko Coin</div>
+    <button onclick="buyTriple()">Triple Shot (10 coin)</button>
+    <button onclick="buyHP()">Tambah HP (5 coin)</button>
+    <button onclick="buyShield()">Shield 5 detik (20 coin)</button>
+</div>
+
+<canvas id="game"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+canvas.width = innerWidth;
+canvas.height = innerHeight;
+
+/* ==========================================
+                 GAME STATE
+========================================== */
+let paused = false;
+let coins = Number(localStorage.getItem("coins") || 0);
+document.getElementById("coin").textContent = coins;
+
+/* ==========================================
+              BACKGROUND SCROLL
+========================================== */
+let bgY = 0;
+function scrollBackground() {
+    if (paused) return;
+    bgY += 1.5;
+    if (bgY >= canvas.height) bgY = 0;
+    bg1.style.top = bgY + "px";
+    bg2.style.top = (bgY - canvas.height) + "px";
+}
+
+/* ==========================================
+                 PLAYER & SKIN
+========================================== */
+const planeSkins = ["jet_blue.png","jet_red.png","jet_anime.png"];
+let currentSkin = 0;
+let playerImage = new Image();
+playerImage.src = planeSkins[currentSkin];
+
+const player = {
+    x: canvas.width/2,
+    y: canvas.height - 140,
+    width: 70,
+    height: 80,
+    hp: 5,
+    shield: false
+};
+document.getElementById("hp").textContent = player.hp;
+
+let bullets = [];
+let enemies = [];
+let enemyBullets = [];
+let explosions = [];
+let powerups = [];
+
+let tripleShot = false;
+let tripleTimer = 0;
+let gameOver = false;
+
+/* ==========================================
+                TOUCH CONTROL
+========================================== */
+document.addEventListener("touchmove", e => {
+    if (paused) return;
+    const t = e.touches[0];
+    player.x = t.clientX - player.width/2;
+});
+
+/* ==========================================
+                SHOOT SYSTEM
+========================================== */
+setInterval(() => {
+    if (gameOver || paused) return;
+
+    if (tripleShot) {
+        bullets.push({ x: player.x + 10, y: player.y, width: 6, height: 15, speed: 10 });
+        bullets.push({ x: player.x + player.width/2 - 3, y: player.y, width: 6, height: 15, speed: 10 });
+        bullets.push({ x: player.x + player.width - 15, y: player.y, width: 6, height: 15, speed: 10 });
+    } else {
+        bullets.push({
+            x: player.x + player.width/2 - 3,
+            y: player.y,
+            width: 6, height: 15, speed: 10
+        });
+    }
+}, 180);
+
+/* ==========================================
+              ENEMY SPAWN
+========================================== */
+const enemyImages = ["enemy1.png","enemy2.png","enemy3.png"];
+
+setInterval(() => {
+    if (paused || gameOver) return;
+    let img = new Image();
+    img.src = enemyImages[Math.floor(Math.random()*enemyImages.length)];
+
+    enemies.push({
+        x: Math.random()*(canvas.width - 40),
+        y: -50,
+        width: 60,
+        height: 60,
+        speed: 3,
+        img: img,
+        shootRate: Math.random()*2000 + 800,
+        lastShoot: Date.now()
+    });
+}, 700);
+
+/* ==========================================
+               ENEMY SHOOT
+========================================== */
+function enemyShoot(m) {
+    enemyBullets.push({
+        x: m.x + m.width/2 - 3,
+        y: m.y + m.height,
+        width: 6, height: 15,
+        speed: 6
+    });
+}
+
+/* ==========================================
+                POWERUP
+========================================== */
+setInterval(() => {
+    if (paused) return;
+    powerups.push({
+        x: Math.random()*(canvas.width-30),
+        y: -50,
+        size: 30,
+        speed: 2
+    });
+}, 6000);
+
+/* ==========================================
+          EFEK MUSUH LOLOS
+========================================== */
+function enemyPassedEffect() {
+    hitFlash.style.animation = "redFlash 0.6s";
+    document.body.style.transform = "translateX(8px)";
+    setTimeout(() => document.body.style.transform = "translateX(-8px)", 100);
+    setTimeout(() => document.body.style.transform = "translateX(0)", 200);
+    setTimeout(() => hitFlash.style.animation = "", 600);
+}
+
+/* ==========================================
+             EXPLOSION EFFECT
+========================================== */
+function createExplosion(x,y) {
+    explosions.push({ x, y, radius: 0, alpha: 1 });
+}
+
+/* ==========================================
+                  SHOP
+========================================== */
+function updateCoins() {
+    localStorage.setItem("coins", coins);
+    document.getElementById("coin").textContent = coins;
+}
+
+function buyTriple() {
+    if (coins < 10) return;
+    coins -= 10;
+    tripleShot = true;
+    tripleTimer = Date.now();
+    updateCoins();
+}
+function buyHP() {
+    if (coins < 5) return;
+    coins -= 5;
+    player.hp++;
+    hp.textContent = player.hp;
+    updateCoins();
+}
+function buyShield() {
+    if (coins < 20) return;
+    coins -= 20;
+    player.shield = true;
+    updateCoins();
+    setTimeout(()=> player.shield = false, 5000);
+}
+
+/* ==========================================
+              PAUSE / PLAY
+========================================== */
+btnPause.onclick = () => {
+    paused = !paused;
+    btnPause.textContent = paused ? "▶" : "❚❚";
+};
+
+/* ==========================================
+                PANELS
+========================================== */
+btnSkin.onclick = () => {
+    skinPanel.style.display = skinPanel.style.display==="none" ? "block" : "none";
+};
+btnShop.onclick = () => {
+    shopPanel.style.display = shopPanel.style.display==="none" ? "block" : "none";
+};
+document.querySelectorAll("#skinPanel img").forEach(img => {
+    img.onclick = () => {
+        currentSkin = img.dataset.id;
+        playerImage.src = planeSkins[currentSkin];
+        skinPanel.style.display = "none";
+    };
+});
+
+/* ==========================================
+                 MAIN LOOP
+========================================== */
+function loop() {
+    if (gameOver) return;
+    if (!paused) {
+        scrollBackground();
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+
+        // PLAYER
+        ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
+
+        // BULLETS
+        ctx.fillStyle = "yellow";
+        bullets.forEach(b=>{ b.y-=b.speed; ctx.fillRect(b.x,b.y,b.width,b.height);});
+        bullets = bullets.filter(b => b.y>-20 && !b.dead);
+
+        // ENEMY
+        enemies.forEach(m=>{
+            m.y += m.speed;
+            ctx.drawImage(m.img, m.x, m.y, m.width, m.height);
+
+            if (Date.now()-m.lastShoot > m.shootRate) {
+                enemyShoot(m);
+                m.lastShoot = Date.now();
+            }
+        });
+
+        enemies = enemies.filter(m=>{
+            if (m.y > canvas.height) {
+                enemyPassedEffect();
+                setTimeout(()=>endGame(),600);
+                return false;
+            }
+            return !m.dead;
+        });
+
+        // HIT: bullet → enemy
+        enemies.forEach(m=>{
+            bullets.forEach(b=>{
+                if (b.x < m.x+m.width && b.x+b.width > m.x &&
+                    b.y < m.y+m.height && b.y+b.height > m.y) {
+
+                    coins++;
+                    updateCoins();
+
+                    b.dead = true;
+                    m.dead = true;
+                    createExplosion(m.x+m.width/2, m.y+m.height/2);
+                }
+            });
+        });
+
+        // enemy bullet
+        ctx.fillStyle = "orange";
+        enemyBullets.forEach(b=>{ b.y+=b.speed; ctx.fillRect(b.x,b.y,b.width,b.height);});
+        enemyBullets = enemyBullets.filter(b=>b.y < canvas.height+50 && !b.dead);
+
+        // damage player
+        enemyBullets.forEach(b=>{
+            if (!player.shield &&
+                b.x < player.x+player.width &&
+                b.x+b.width > player.x &&
+                b.y < player.y+player.height &&
+                b.y+b.height > player.y) {
+                b.dead=true;
+                player.hp--;
+                hp.textContent = player.hp;
+                if (player.hp<=0) endGame();
+            }
+        });
+
+        // POWERUP
+        ctx.fillStyle = "lime";
+        powerups.forEach(p=>{
+            p.y+=p.speed;
+            ctx.fillRect(p.x,p.y,p.size,p.size);
+
+            if (player.x<p.x+p.size && player.x+player.width>p.x &&
+                player.y<p.y+p.size && player.y+player.height>p.y) {
+
+                coins+=2;
+                updateCoins();
+                tripleShot=true;
+                tripleTimer=Date.now();
+                p.dead=true;
+            }
+        });
+        powerups = powerups.filter(p=>p.y<canvas.height+30 && !p.dead);
+
+        // TRIPLE timer
+        if (tripleShot && Date.now()-tripleTimer>5000) tripleShot=false;
+
+        // EXPLOSION
+        explosions.forEach(ex=>{
+            ctx.beginPath();
+            ctx.arc(ex.x,ex.y,ex.radius,0,Math.PI*2);
+            ctx.fillStyle=`rgba(255,150,0,${ex.alpha})`;
+            ctx.fill();
+            ex.radius+=2;
+            ex.alpha-=0.05;
+        });
+        explosions = explosions.filter(ex=>ex.alpha>0);
+    }
+
+    requestAnimationFrame(loop);
+}
+
+/* ==========================================
+               GAME OVER
+========================================== */
+function endGame() {
+    gameOver = true;
+    setTimeout(()=>location.reload(),1000);
+}
+
+loop();
+</script>
+
+</body>
+</html>
