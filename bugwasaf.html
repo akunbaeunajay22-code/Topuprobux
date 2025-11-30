@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aplikasi WA API Lengkap</title>
+
+<style>
+    body { font-family: Arial; background: #0a0a0a; color: white; padding: 20px; }
+    .card {
+        background: #1a1a1a; padding: 20px; border-radius: 15px;
+        max-width: 450px; margin: auto; box-shadow: 0 0 15px #ff8400aa;
+    }
+    input, button, textarea {
+        width: 100%; padding: 12px; margin-top: 10px;
+        border-radius: 10px; border: none; font-size: 16px;
+    }
+    button {
+        background: #ff7b00; color: white; font-weight: bold; cursor: pointer;
+    }
+    #operator { margin-top: 10px; font-size: 18px; font-weight: bold; text-align: center; }
+
+    /* Loading + api 🔥 */
+    #loading { display:none; text-align:center; margin-top:15px; font-size:18px; }
+    .api-loading {
+        width:40px; height:40px; margin:auto; border:5px solid #ffb400;
+        border-top-color:transparent; border-radius:50%;
+        animation: spin 1s infinite linear;
+    }
+    @keyframes spin { 100% { transform:rotate(360deg);} }
+
+    .fire {
+        width:50px; height:50px; margin:10px auto;
+        background:radial-gradient(circle, #ff0, #ff5500, #a40000);
+        border-radius:50%; animation:fireAnim 0.25s infinite alternate;
+        display:none;
+    }
+    @keyframes fireAnim {
+        0% { transform:scale(1); filter:blur(1px); }
+        100% { transform:scale(1.2); filter:blur(3px); }
+    }
+
+    #notif { margin-top:15px; padding:10px; border-radius:10px; text-align:center; display:none; }
+    
+    #adminLog {
+        background:#111; padding:10px; border-radius:10px; margin-top:20px;
+        max-height:250px; overflow-y:auto; display:none;
+    }
+</style>
+</head>
+<body>
+
+<div class="card">
+
+    <h2>WA API Tools Lengkap</h2>
+
+    <input type="number" id="nomor" placeholder="Masukkan nomor..." oninput="detectOperator()">
+    <div id="operator">Operator: -</div>
+
+    <button onclick="sendData()">Kirim Data ke Server</button>
+    <button onclick="exportJSON()">Export JSON</button>
+    <button onclick="sendWA()">Kirim WA API</button>
+    <button onclick="sendWAImage()">Kirim WA + Gambar</button>
+
+    <input type="file" id="fileUpload">
+    <button onclick="sendWAUploadedFile()">Kirim File Upload</button>
+
+    <button onclick="sendWAFile()">Kirim File (URL)</button>
+    <button onclick="sendWAOTP()">Kirim OTP WA</button>
+    <button onclick="sendOperatorMessage()">Kirim Promo Operator</button>
+
+    <textarea id="multiList" placeholder="08123...,08124...,08125..." style="height:80px;"></textarea>
+    <button onclick="broadcastSend()">Broadcast WA</button>
+
+    <div id="loading">
+        <div class="api-loading"></div>
+        <div class="fire"></div>
+        Mengirim...
+    </div>
+
+    <div id="notif"></div>
+
+    <!-- DASHBOARD ADMIN / LOG -->
+    <h3 style="margin-top:20px;">Admin Log</h3>
+    <div id="adminLog"></div>
+
+</div>
+
+<!-- 🔥 Firebase (opsional, bisa dihapus kalau tidak dipakai) -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"></script>
+
+<script>
+/* ----------------------------------------------
+   CONFIG FIREBASE (opsional) 
+---------------------------------------------- */
+const firebaseConfig = {
+    apiKey: "APIKEY",
+    authDomain: "PROJECT.firebaseapp.com",
+    databaseURL: "https://PROJECT.firebaseio.com",
+    projectId: "PROJECT",
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+
+/* ----------------------------------------------
+   AUTO DETECT OPERATOR
+---------------------------------------------- */
+function detectOperator() {
+    let num = nomor.value;
+    let op = "-";
+
+    const prefix = {
+        Telkomsel: ["0811","0812","0813","0821","0822","0852","0853"],
+        XL: ["0817","0818","0819","0859","0877","0878"],
+        Axis: ["0838","0831","0832","0833"],
+        Tri: ["0895","0896","0897","0898","0899"],
+        Indosat: ["0855","0856","0857","0858"],
+        Smartfren: ["0881","0882","0883","0884"]
+    };
+
+    for (let key in prefix) {
+        if (prefix[key].some(p => num.startsWith(p))) op = key;
+    }
+
+    operator.innerHTML = "Operator: " + op;
+}
+
+
+/* ----------------------------------------------
+   NOTIF + LOADING
+---------------------------------------------- */
+function showNotif(text, color) {
+    notif.style.display = "block";
+    notif.style.background = color;
+    notif.innerText = text;
+    setTimeout(() => notif.style.display = "none", 2500);
+}
+
+function showLoading(show) {
+    loading.style.display = show ? "block" : "none";
+    document.querySelector(".fire").style.display = show ? "block" : "none";
+}
+
+function addLog(text, color="white") {
+    adminLog.style.display = "block";
+    adminLog.innerHTML += `<div style="color:${color};">${text}</div>`;
+}
+
+
+/* ----------------------------------------------
+   DATABASE SAVE
+---------------------------------------------- */
+function saveToDB(data) {
+    db.ref("dataWA").push(data);
+    addLog("DB Save: " + data.nomor, "cyan");
+}
+
+
+/* ----------------------------------------------
+   EXPORT JSON
+---------------------------------------------- */
+function exportJSON() {
+    let data = {
+        nomor: nomor.value,
+        operator: operator.innerText.replace("Operator: ", ""),
+        waktu: new Date().toLocaleString()
+    };
+
+    let blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
+    let url = URL.createObjectURL(blob);
+
+    let a = document.createElement("a");
+    a.href = url;
+    a.download = "data.json";
+    a.click();
+}
+
+
+/* ----------------------------------------------
+   KIRIM DATA KE SERVER
+---------------------------------------------- */
+function sendData() {
+    let payload = {
+        nomor: nomor.value,
+        operator: operator.innerText.replace("Operator: ", ""),
+        waktu: new Date().toLocaleString()
+    };
+
+    showLoading(true);
+
+    fetch("https://your-server.com/api", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body:JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(r => {
+        showLoading(false);
+        showNotif("Data terkirim!", "green");
+        addLog("Server Response OK", "lightgreen");
+    })
+    .catch(e => {
+        showLoading(false);
+        showNotif("Gagal kirim server", "red");
+        addLog("Server Error", "red");
+    });
+}
+
+
+/* ----------------------------------------------
+   UNIVERSAL WA API SENDER
+---------------------------------------------- */
+const WA_URL = "https://api.fonnte.com/send";
+const WA_TOKEN = "TOKEN_KAMU";
+
+/* Kirim WA Pesan Text */
+function sendWA() {
+    let pesan = `
+📱 *DATA NOMOR*
+Nomor: ${nomor.value}
+Operator: ${operator.innerText.replace("Operator: ", "")}
+Waktu: ${new Date().toLocaleString()}
+`;
+
+    sendWAWithMessage(nomor.value, pesan);
+}
+
+/* Fungsi inti pengiriman WA */
+function sendWAWithMessage(target, message) {
+    showLoading(true);
+
+    fetch(WA_URL, {
+        method:"POST",
+        headers:{ Authorization: WA_TOKEN },
+        body:JSON.stringify({ target, message })
+    })
+    .then(r=>r.json())
+    .then(r=>{
+        showLoading(false);
+        showNotif("WA terkirim!", "green");
+        saveToDB({ nomor: target, message });
+        addLog("WA Sent → " + target, "lightgreen");
+    })
+    .catch(e=>{
+        showLoading(false);
+        showNotif("Gagal kirim WA", "red");
+        addLog("WA Error", "red");
+    });
+}
+
+
+/* ----------------------------------------------
+   WA WITH IMAGE
+---------------------------------------------- */
+function sendWAImage() {
+    let img = "https://i.ibb.co/6YW5Xbw/sample.jpg";
+
+    sendWAGeneric({
+        target: nomor.value,
+        message: "Berikut gambar Anda 📷",
+        image: img
+    });
+
+    addLog("WA Image → " + nomor.value, "orange");
+}
+
+function sendWAGeneric(payload) {
+    showLoading(true);
+
+    fetch(WA_URL, {
+        method:"POST",
+        headers:{ Authorization: WA_TOKEN },
+        body:JSON.stringify(payload)
+    })
+    .then(r=>r.json())
+    .then(r=>{
+        showLoading(false);
+        showNotif("Terkirim!", "green");
+        saveToDB(payload);
+    })
+    .catch(e=>{
+        showLoading(false);
+        showNotif("Gagal", "red");
+    });
+}
+
+
+/* ----------------------------------------------
+   WA SEND FILE (URL)
+---------------------------------------------- */
+function sendWAFile() {
+    sendWAGeneric({
+        target: nomor.value,
+        message: "Berikut file Anda 📄",
+        file: "https://your-server.com/data.pdf"
+    });
+}
+
+
+/* ----------------------------------------------
+   WA SEND FILE UPLOAD
+---------------------------------------------- */
+function sendWAUploadedFile() {
+    let file = fileUpload.files[0];
+    let form = new FormData();
+
+    form.append("file", file);
+    form.append("target", nomor.value);
+
+    showLoading(true);
+
+    fetch(WA_URL, {
+        method:"POST",
+        headers:{ Authorization: WA_TOKEN },
+        body:form
+    })
+    .then(r=>r.json())
+    .then(r=>{
+        showLoading(false);
+        showNotif("File upload terkirim!", "green");
+        addLog("Upload → " + nomor.value, "lightgreen");
+    })
+    .catch(e=>{
+        showLoading(false);
+        showNotif("Gagal upload WA", "red");
+    });
+}
+
+
+/* ----------------------------------------------
+   WA OTP SENDER
+---------------------------------------------- */
+function sendWAOTP() {
+    let otp = Math.floor(100000 + Math.random() * 900000);
+
+    let pesan = `
+🔐 *KODE OTP*
+Kode Anda: *${otp}*
+Jangan berikan kepada siapapun.
+    `;
+
+    sendWAWithMessage(nomor.value, pesan);
+    addLog("OTP → " + nomor.value + " = " + otp, "yellow");
+}
+
+
+/* ----------------------------------------------
+   KIRIM PROMO BERDASARKAN OPERATOR
+---------------------------------------------- */
+function sendOperatorMessage() {
+    const op = operator.innerText.replace("Operator: ", "");
+
+    const promo = {
+        Telkomsel: "Promo Telkomsel: Kuota 20GB cuma 25rb!",
+        XL: "Promo XL: Unlimited Harian!",
+        Tri: "Tri Bonus 15GB!",
+        Axis: "Axis Gaming murah!",
+        Indosat: "IM3 Promo Spesial!",
+        Smartfren: "Smartfren Unlimited!"
+    };
+
+    sendWAWithMessage(nomor.value, promo[op] || "Promo umum hari ini!");
+}
+
+
+/* ----------------------------------------------
+   BROADCAST WA
+---------------------------------------------- */
+function broadcastSend() {
+    let list = multiList.value.split(",");
+
+    list.forEach((num, i) => {
+        setTimeout(() => {
+            sendWAWithMessage(num.trim(), "Broadcast otomatis 🚀");
+            addLog("Broadcast → " + num, "orange");
+        }, i * 800);
+    });
+}
+
+</script>
+</body>
+</html>
