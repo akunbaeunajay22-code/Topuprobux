@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Share File Pesawat → WhatsApp (All Features)</title>
+
+<!-- JSZip untuk ZIP client-side -->
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
+<style>
+  :root{
+    --bg:#0b1320; --panel:#071421; --muted:#9fb0bd; --accent:#00c2a8; --danger:#ff6b6b;
+    --glass: rgba(255,255,255,0.03);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Arial;background:linear-gradient(180deg,#06111a,#021018);color:#e5f3f6}
+  .wrap{max-width:1100px;margin:18px auto;padding:18px}
+  h1{font-size:20px;margin:0 0 8px}
+  .layout{display:grid;grid-template-columns:1fr 360px;gap:16px}
+  .card{background:var(--panel);border-radius:12px;padding:12px;box-shadow:0 8px 30px rgba(0,0,0,0.5)}
+  .drop{min-height:160px;border:2px dashed rgba(255,255,255,0.04);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:12px;transition:all .12s}
+  .drop.drag{background:rgba(0,194,168,0.03);border-color:rgba(0,194,168,0.25)}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  button{background:var(--accent);border:none;color:#012;padding:10px 12px;border-radius:10px;cursor:pointer;font-weight:700}
+  .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
+  .toggle{padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:var(--glass);color:var(--muted)}
+  .files-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:12px}
+  .filecard{display:flex;gap:8px;padding:8px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));border-radius:10px;align-items:center}
+  .thumb{width:64px;height:64px;border-radius:8px;background:#06131a;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .thumb img{width:100%;height:100%;object-fit:cover}
+  .meta{flex:1;min-width:0}
+  .meta b{display:block;font-size:14px}
+  .meta small{color:var(--muted);display:block;margin-top:6px;font-size:12px}
+  .progressWrap{height:8px;background:rgba(0,0,0,0.2);border-radius:6px;margin-top:8px;overflow:hidden}
+  .progressFill{height:100%;width:0;background:linear-gradient(90deg,var(--accent), #00ffdf)}
+  .actions{display:flex;gap:6px;flex-direction:column}
+  input[type="file"]{display:none}
+  .side .form-row{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+  input[type="text"], input[type="url"], select{padding:10px;border-radius:8px;border:none;background:#051418;color:#e6f2f4}
+  .small{font-size:13px;color:var(--muted)}
+  footer{margin-top:12px;color:var(--muted);font-size:13px;text-align:center}
+  .light-mode{background:linear-gradient(180deg,#f6f9fb,#e9f0f6);color:#07202a}
+  @media (max-width:980px){ .layout{grid-template-columns:1fr} .side{order:2} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Share File Pesawat → WhatsApp — Semua Fitur</h1>
+  <div class="layout">
+    <div class="card">
+      <div id="drop" class="drop">
+        <div style="text-align:center">
+          <strong style="font-size:16px">Tarik & letakkan file di sini atau klik Pilih File</strong>
+          <div class="small" style="margin-top:6px">Gambar, .zip, .apk, .obj, .mp3, .json — banyak file didukung</div>
+        </div>
+        <div style="margin-top:12px" class="controls">
+          <label class="toggle btn-ghost" id="pickBtn">Pilih File</label>
+          <input id="fileInput" type="file" multiple>
+          <button id="clearBtn" class="btn-ghost">Hapus Semua</button>
+          <button id="downloadZipBtn" class="btn-ghost">Download ZIP</button>
+        </div>
+        <div style="width:100%;margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+          <label class="toggle" id="compressToggle">Compress gambar: ON</label>
+          <label class="toggle" id="autoRenameToggle">Auto-rename: ON</label>
+          <label class="toggle" id="autoZipToggle">Auto-zip jika >1: ON</label>
+        </div>
+      </div>
+
+      <div id="filesGrid" class="files-grid"></div>
+
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button id="shareNative">Share (Native / WA App)</button>
+        <button id="openWAWeb" class="btn-ghost">Buka WhatsApp Web (teks)</button>
+        <button id="autoPrepareBtn" class="btn-ghost">Auto-prepare & Download</button>
+        <button id="sendAgain" class="btn-ghost">Kirim Lagi</button>
+      </div>
+
+      <div style="margin-top:10px" class="small">
+        • Jika browser mendukung file-sharing, tombol Share akan membuka share sheet (pilih WhatsApp).<br>
+        • WhatsApp Web tidak dapat menerima file dari blob URL secara otomatis — gunakan ZIP atau upload ke server.
+      </div>
+    </div>
+
+    <aside class="card side">
+      <div class="form-row">
+        <label class="small">Nomor WA tujuan (format internasional, tanpa +):</label>
+        <input id="waNumber" type="text" placeholder="contoh: 6281234567890">
+      </div>
+      <div class="form-row">
+        <label class="small">Invite link grup (opsional):</label>
+        <input id="groupLink" type="url" placeholder="https://chat.whatsapp.com/... (opsional)">
+      </div>
+
+      <div class="form-row">
+        <label class="small">Kualitas compress (gambar):</label>
+        <select id="quality">
+          <option value="0.9">90%</option>
+          <option value="0.8" selected>80%</option>
+          <option value="0.7">70%</option>
+          <option value="0.6">60%</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label class="small">Max width (px) untuk compress:</label>
+        <input id="maxWidth" type="text" value="1200">
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button id="toggleTheme" class="btn-ghost">Toggle Light/Dark</button>
+        <button id="downloadPrepared" class="btn-ghost">Download Terakhir</button>
+      </div>
+
+      <div style="margin-top:12px">
+        <label class="small">Status:</label>
+        <div id="status" class="small">Kosong</div>
+      </div>
+
+      <div style="margin-top:10px">
+        <label class="small">Preview pesan otomatis:</label>
+        <textarea id="previewText" rows="6" style="width:100%;padding:8px;border-radius:8px;border:none;background:#021518;color:#e6f6f6"></textarea>
+      </div>
+    </aside>
+  </div>
+
+  <footer>API: <code>shareFromGame(filesArray, {number, groupLink})</code> • Simpan page ini lalu buka di HP/PC.</footer>
+</div>
+
+<script>
+/* =========================
+   State & Helpers
+   ========================= */
+const fileInput = document.getElementById('fileInput');
+const drop = document.getElementById('drop');
+const filesGrid = document.getElementById('filesGrid');
+const pickBtn = document.getElementById('pickBtn');
+const clearBtn = document.getElementById('clearBtn');
+const compressToggle = document.getElementById('compressToggle');
+const qualitySelect = document.getElementById('quality');
+const maxWidthInput = document.getElementById('maxWidth');
+const autoRenameToggle = document.getElementById('autoRenameToggle');
+const autoZipToggle = document.getElementById('autoZipToggle');
+const downloadZipBtn = document.getElementById('downloadZipBtn');
+const shareNativeBtn = document.getElementById('shareNative');
+const openWAWebBtn = document.getElementById('openWAWeb');
+const autoPrepareBtn = document.getElementById('autoPrepareBtn');
+const downloadPreparedBtn = document.getElementById('downloadPrepared');
+const sendAgainBtn = document.getElementById('sendAgain');
+const statusEl = document.getElementById('status');
+const previewTextEl = document.getElementById('previewText');
+const waNumberEl = document.getElementById('waNumber');
+const groupLinkEl = document.getElementById('groupLink');
+const toggleThemeBtn = document.getElementById('toggleTheme');
+
+let state = {
+  files: [], // {id, file, name, previewBlob, progress}
+  compressImages: true,
+  autoRename: true,
+  autoZipIfMany: true,
+  lastPrepared: null // {blob, name}
+};
+
+function uid(){ return Math.random().toString(36).slice(2,9) }
+function fmtSize(n){ if(n<1024) return n+' B'; if(n<1024*1024) return (n/1024).toFixed(1)+' KB'; return (n/1024/1024).toFixed(2)+' MB' }
+function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]) }
+
+/* =========================
+   Drag & Drop handling
+   ========================= */
+['dragenter','dragover'].forEach(ev=>{
+  drop.addEventListener(ev, e=>{ e.preventDefault(); e.stopPropagation(); drop.classList.add('drag'); });
+});
+['dragleave','dragend','drop'].forEach(ev=>{
+  drop.addEventListener(ev, e=>{ e.preventDefault(); e.stopPropagation(); if(ev==='drop') handleDrop(e); setTimeout(()=>drop.classList.remove('drag'),120); });
+});
+function handleDrop(e){
+  const dt = e.dataTransfer;
+  if(!dt) return;
+  addFiles(Array.from(dt.files || []));
+}
+
+/* =========================
+   File add & preview
+   ========================= */
+pickBtn.addEventListener('click', ()=> fileInput.click());
+fileInput.addEventListener('change', e=>{ addFiles(Array.from(e.target.files || [])); fileInput.value=''; });
+
+async function addFiles(list){
+  for(const f of list){
+    const id = uid();
+    let name = f.name;
+    if(state.autoRename && state.files.length>0){
+      // rename to pesawat_0n.ext (if enabled)
+      const idx = state.files.length + 1;
+      const ext = (f.name.match(/\.([^.]+)$/)||[])[1] || '';
+      name = `pesawat_${String(idx).padStart(2,'0')}` + (ext?'.'+ext:'');
+    }
+    const entry = {id, file: f, name, previewBlob: null, progress:0};
+    state.files.push(entry);
+    renderFiles();
+    // create preview & compress if image and enabled
+    if(f.type.startsWith('image/')){
+      if(state.compressImages){
+        try{
+          updateStatus('Mengkompres gambar: ' + f.name);
+          const q = parseFloat(qualitySelect.value);
+          const maxW = parseInt(maxWidthInput.value) || 1200;
+          const cblob = await compressImageFile(f, maxW, q, p=> updateFileProgress(id, p*0.8));
+          entry.previewBlob = cblob;
+          entry.file = new File([cblob], name, {type: cblob.type});
+          updateFileProgress(id, 0.9);
+        }catch(e){ console.warn('compress fail', e); entry.previewBlob = f; }
+      } else {
+        entry.previewBlob = f;
+      }
+    }
+    updateFileProgress(id, 1);
+    renderFiles();
+  }
+  updateStatus(`${state.files.length} file siap`);
+  // if auto-zip enabled and >1, prepare zip automatically
+  if(state.autoZipIfMany && state.files.length>1){
+    await prepareAutoZip(); // prepare in background
+  }
+}
+
+/* image compress using canvas */
+function compressImageFile(file, maxW=1200, quality=0.8, onProgress=()=>{}){
+  return new Promise((resolve,reject)=>{
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = ()=>{
+      try{
+        let w = img.width, h = img.height;
+        if(w>maxW){ h = Math.round(h*(maxW/w)); w = maxW; }
+        const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img,0,0,w,h);
+        // convert to blob
+        canvas.toBlob(b=>{
+          URL.revokeObjectURL(url);
+          if(!b) return reject(new Error('Compression error'));
+          resolve(b);
+        }, 'image/jpeg', quality);
+      }catch(err){ URL.revokeObjectURL(url); reject(err) }
+    };
+    img.onerror = e=>{ URL.revokeObjectURL(url); reject(new Error('Load image failed')) };
+    img.src = url;
+  });
+}
+
+/* =========================
+   Render file items
+   ========================= */
+function renderFiles(){
+  filesGrid.innerHTML = '';
+  for(const it of state.files){
+    const el = document.createElement('div'); el.className='filecard';
+    const t = document.createElement('div'); t.className='thumb';
+    if(it.previewBlob){
+      const im = document.createElement('img'); im.src = URL.createObjectURL(it.previewBlob); im.onload=()=>URL.revokeObjectURL(im.src);
+      t.appendChild(im);
+    } else {
+      t.innerHTML = `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#6d8b90" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
+    }
+    const meta = document.createElement('div'); meta.className='meta';
+    meta.innerHTML = `<b>${escapeHtml(it.name)}</b><small>${fmtSize(it.file.size)} • ${it.file.type || 'file'}</small>`;
+    const pwrap = document.createElement('div'); pwrap.className='progressWrap';
+    const pfill = document.createElement('div'); pfill.className='progressFill'; pfill.style.width = Math.round((it.progress||0)*100) + '%';
+    pwrap.appendChild(pfill); meta.appendChild(pwrap);
+
+    const actions = document.createElement('div'); actions.className='actions';
+    const btnD = document.createElement('button'); btnD.className='btn-ghost'; btnD.textContent='Download';
+    btnD.onclick = ()=> downloadBlob(it.file, it.name);
+    const btnDel = document.createElement('button'); btnDel.className='btn-ghost'; btnDel.textContent='Hapus';
+    btnDel.onclick = ()=> { state.files = state.files.filter(x=>x.id!==it.id); renderFiles(); updateStatus(`${state.files.length} file tersisa`); };
+    actions.appendChild(btnD); actions.appendChild(btnDel);
+
+    el.appendChild(t); el.appendChild(meta); el.appendChild(actions);
+    filesGrid.appendChild(el);
+  }
+}
+
+function updateFileProgress(id, v){ const it = state.files.find(x=>x.id===id); if(!it) return; it.progress = Math.max(0, Math.min(1, v)); renderFiles(); }
+
+/* =========================
+   ZIP builder & downloads
+   ========================= */
+async function buildZip(progressCb = ()=>{}){
+  if(state.files.length===0) throw new Error('Tidak ada file');
+  const zip = new JSZip();
+  for(let i=0;i<state.files.length;i++){
+    const it = state.files[i];
+    const ab = await it.file.arrayBuffer();
+    zip.file(it.name, ab);
+    progressCb((i+1)/state.files.length);
+  }
+  const blob = await zip.generateAsync({type:'blob'}, meta=> progressCb(meta.percent/100));
+  return blob;
+}
+
+downloadZipBtn.addEventListener('click', async ()=>{
+  try{
+    if(state.files.length===0) return alert('Tambahkan file dahulu');
+    setBusy(true);
+    updateStatus('Membuat ZIP...');
+    const z = await buildZip(p=> updateStatus('ZIP: ' + Math.round(p*100) + '%'));
+    downloadBlob(z, `pesawat-share-${Date.now()}.zip`);
+    state.lastPrepared = { blob: z, name: `pesawat-share-${Date.now()}.zip` };
+    updateStatus('ZIP siap untuk dikirim');
+  }catch(err){ alert('Gagal membuat ZIP: '+err.message); console.error(err) }
+  finally{ setBusy(false) }
+});
+
+/* fast download of a blob or file */
+function downloadBlob(blobOrFile, filename){
+  const blob = (blobOrFile instanceof Blob) ? blobOrFile : blobOrFile;
+  const a = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 1500);
+}
+
+/* =========================
+   Auto prepare (download + open WA)
+   - If single file: auto-download file
+   - If multiple & autoZip: create zip, download zip
+   - Save lastPrepared for "Kirim Lagi"
+   ========================= */
+autoPrepareBtn.addEventListener('click', prepareAutoZip);
+async function prepareAutoZip(){
+  try{
+    if(state.files.length===0){ alert('Tambahkan file dulu'); return; }
+    setBusy(true);
+    if(state.files.length===1){
+      // single file: download file
+      updateStatus('Menyiapkan file: ' + state.files[0].name);
+      const f = state.files[0].file;
+      downloadBlob(f, state.files[0].name);
+      state.lastPrepared = { blob: f, name: state.files[0].name };
+      updateStatus('File siap — buka WhatsApp untuk melampirkan');
+    } else {
+      // multiple files: zip
+      updateStatus('Membuat ZIP...');
+      const z = await buildZip(p=> updateStatus('ZIP: ' + Math.round(p*100) + '%'));
+      const name = `pesawat-share-${Date.now()}.zip`;
+      downloadBlob(z, name);
+      state.lastPrepared = { blob: z, name };
+      updateStatus('ZIP siap — buka WhatsApp & lampirkan file ZIP');
+    }
+    // auto open WA chat (no file attached automatically by browser)
+    const num = (waNumberEl.value||'').replace(/\D/g,'');
+    const txt = encodeURIComponent(buildShareText(true));
+    if(num) window.open(`https://wa.me/${num}?text=${txt}`, '_blank');
+    else window.open(`https://wa.me/?text=${txt}`, '_blank');
+  }catch(err){ console.error(err); alert('Gagal menyiapkan: '+err.message) }
+  finally{ setBusy(false) }
+}
+
+/* =========================
+   Native share / navigator.share
+   ========================= */
+shareNativeBtn.addEventListener('click', async ()=>{
+  try{
+    if(state.files.length===0){ alert('Tambahkan file dulu'); return; }
+    // prepare File objects
+    const shareFiles = await Promise.all(state.files.map(async it=>{
+      const f = it.file;
+      return new File([await f.arrayBuffer()], it.name, {type: f.type || 'application/octet-stream'});
+    }));
+    if(navigator.canShare && navigator.canShare({files: shareFiles})){
+      await navigator.share({ files: shareFiles, title: 'File Pesawat', text: buildShareText() });
+      updateStatus('Share sheet dibuka');
+    } else if(navigator.share){
+      await navigator.share({ title: 'File Pesawat', text: buildShareText() });
+      alert('Browser tidak mendukung pengiriman file langsung. Gunakan Download ZIP lalu lampirkan manual.');
+    } else {
+      alert('Fitur share tidak didukung di browser ini. Silakan gunakan Download ZIP / Auto-prepare.');
+    }
+  }catch(err){ console.error(err); alert('Share gagal: ' + (err.message||err)) }
+});
+
+/* =========================
+   Open WA Web with text only
+   ========================= */
+openWAWebBtn.addEventListener('click', ()=>{
+  const num = (waNumberEl.value||'').replace(/\D/g,'');
+  const txt = encodeURIComponent(buildShareText(true));
+  if(num) window.open(`https://wa.me/${num}?text=${txt}`, '_blank');
+  else window.open(`https://wa.me/?text=${txt}`, '_blank');
+  copyToClipboard(buildShareText(true)); alert('Pesan disalin ke clipboard — paste di chat WA Web jika perlu.');
+});
+
+/* =========================
+   Send again (re-open WA or re-share prepared blob)
+   ========================= */
+sendAgainBtn.addEventListener('click', async ()=>{
+  if(!state.lastPrepared){ alert('Belum ada file yang disiapkan. Tekan "Auto-prepare & Download" dulu.'); return; }
+  // try native share first
+  try{
+    const blob = state.lastPrepared.blob;
+    const file = new File([await blob.arrayBuffer()], state.lastPrepared.name, { type: blob.type || 'application/octet-stream' });
+    if(navigator.canShare && navigator.canShare({files: [file]})){
+      await navigator.share({ files: [file], title:'File Pesawat', text: buildShareText() });
+      updateStatus('Share lagi berhasil');
+      return;
+    }
+  }catch(e){ console.warn('native share fail', e) }
+  // fallback: re-download and open WA chat
+  downloadBlob(state.lastPrepared.blob, state.lastPrepared.name);
+  const num = (waNumberEl.value||'').replace(/\D/g,'');
+  const txt = encodeURIComponent(buildShareText(true));
+  if(num) window.open(`https://wa.me/${num}?text=${txt}`, '_blank');
+  else window.open(`https://wa.me/?text=${txt}`, '_blank');
+  updateStatus('Siap dikirim ulang — file di-download lagi');
+});
+
+/* =========================
+   Utilities
+   ========================= */
+function buildShareText(forWeb=false){
+  const lines = [];
+  lines.push('Halo! Saya kirim file pesawat / asset game.');
+  const num = (waNumberEl.value||'').trim();
+  if(num) lines.push('Nomor tujuan: +' + num);
+  const group = (groupLinkEl.value||'').trim();
+  if(group) lines.push('Grup: ' + group);
+  lines.push('');
+  lines.push('File:');
+  for(const it of state.files) lines.push('- '+ it.name + ' ('+ fmtSize(it.file.size) +')');
+  lines.push('');
+  if(forWeb) lines.push('Catatan: file sudah di-download dari browser. Silakan lampirkan file yang terdownload.');
+  else lines.push('File terlampir (lihat attachment).');
+  lines.push('');
+  lines.push('— dikirim via Share File Pesawat (web)');
+  previewTextEl.value = lines.join('\n');
+  return previewTextEl.value;
+}
+
+function updateStatus(txt){ statusEl.textContent = txt; }
+function setBusy(b){
+  [shareNativeBtn, openWAWebBtn, autoPrepareBtn, downloadZipBtn, downloadPreparedBtn, sendAgainBtn].forEach(x=>x.disabled = b);
+}
+
+/* copy to clipboard helper */
+function copyToClipboard(text){ if(navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text); const t=document.createElement('textarea'); t.value=text; document.body.appendChild(t); t.select(); try{ document.execCommand('copy') }catch(e){} t.remove(); }
+
+/* =========================
+   Auto-rename / toggles
+   ========================= */
+compressToggle.addEventListener('click', ()=>{ state.compressImages = !state.compressImages; compressToggle.textContent = 'Compress gambar: ' + (state.compressImages? 'ON':'OFF'); });
+autoRenameToggle.addEventListener('click', ()=>{ state.autoRename = !state.autoRename; autoRenameToggle.textContent = 'Auto-rename: ' + (state.autoRename? 'ON':'OFF'); });
+autoZipToggle.addEventListener('click', ()=>{ state.autoZipIfMany = !state.autoZipIfMany; autoZipToggle.textContent = 'Auto-zip jika >1: ' + (state.autoZipIfMany? 'ON':'OFF'); });
+clearBtn.addEventListener('click', ()=>{ if(confirm('Hapus semua file?')){ state.files=[]; renderFiles(); updateStatus('Daftar dihapus'); } });
+
+downloadPreparedBtn.addEventListener('click', ()=>{ if(!state.lastPrepared) return alert('Belum ada file yang disiapkan'); downloadBlob(state.lastPrepared.blob, state.lastPrepared.name); updateStatus('Download ulang file terakhir'); });
+
+toggleThemeBtn.addEventListener('click', ()=>{ document.body.classList.toggle('light-mode'); });
+
+/* =========================
+   Public API for game integration
+   Usage:
+     shareFromGame([blobOrFile1, blobOrFile2], { number:'62812...', groupLink:'https://chat.whatsapp.com/...'})
+   ========================= */
+window.shareFromGame = async function(filesArray, options = {}){
+  try{
+    // convert to File if necessary
+    const converted = filesArray.map((f, idx)=>{
+      if(f instanceof File) return f;
+      if(f instanceof Blob) return new File([f], `game-file-${idx+1}`, {type: f.type||'application/octet-stream'});
+      throw new Error('Element must be Blob or File');
+    });
+    // add to UI state
+    await addFiles(converted);
+    if(options.number) waNumberEl.value = options.number.toString().replace(/\D/g,'');
+    if(options.groupLink) groupLinkEl.value = options.groupLink;
+    // try to auto share via native if possible
+    setTimeout(()=>{ if(navigator.canShare){ shareNativeBtn.click(); } else { prepareAutoZip(); } }, 400);
+  }catch(e){ console.error('shareFromGame error', e) }
+};
+
+/* initialize defaults */
+compressToggle.textContent = 'Compress gambar: ON';
+autoRenameToggle.textContent = 'Auto-rename: ON';
+autoZipToggle.textContent = 'Auto-zip jika >1: ON';
+updateStatus('Siap — tambahkan file.');
+buildShareText();
+
+</script>
+</body>
+</html>
