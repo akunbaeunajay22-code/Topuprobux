@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>VORXAZA - Login & Main</title>
+<style>
+    body {
+        margin: 0;
+        background: black;
+        color: white;
+        font-family: Arial, sans-serif;
+        overflow-x: hidden;
+    }
+
+    /* CANVAS BACKGROUND */
+    canvas#bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+    }
+
+    /* LOGIN PAGE */
+    #loginPage {
+        display: block;
+    }
+
+    #mainPage {
+        display: none;
+    }
+
+    .login-box {
+        width: 320px;
+        padding: 25px;
+        border: 2px solid #9b00ff;
+        border-radius: 15px;
+        text-align: center;
+        background: rgba(0,0,0,0.6);
+        backdrop-filter: blur(10px);
+        margin: 90px auto;
+    }
+
+    .login-box h2 {
+        margin-bottom: 20px;
+        font-size: 28px;
+        font-weight: bold;
+    }
+
+    input, select {
+        width: 90%;
+        padding: 12px;
+        margin: 10px 0;
+        border-radius: 10px;
+        border: 2px solid #9b00ff;
+        background: transparent;
+        color: #fff;
+        font-size: 14px;
+    }
+
+    .btn {
+        width: 95%;
+        padding: 12px;
+        border: none;
+        border-radius: 10px;
+        background: linear-gradient(to right, #9b00ff, #c700ff);
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+        margin-top: 10px;
+    }
+
+    .link-wa {
+        margin-top: 10px;
+        display: block;
+        color: #c700ff;
+        font-size: 14px;
+        text-decoration: none;
+    }
+
+    /* MAIN PAGE */
+    .container {
+        margin-top: 80px;
+        text-align: center;
+    }
+
+    .container h1 {
+        font-size: 50px;
+        font-weight: bold;
+        margin-bottom: 40px;
+    }
+
+    .box {
+        width: 80%;
+        max-width: 400px;
+        margin: auto;
+        padding: 20px;
+        border: 2px solid #9b00ff;
+        border-radius: 20px;
+        background: rgba(0,0,0,0.4);
+        backdrop-filter: blur(8px);
+    }
+
+    label {
+        display: block;
+        text-align: left;
+        width: 85%;
+        margin: 10px auto 5px;
+        font-size: 15px;
+        font-weight: bold;
+    }
+
+    .btn-large {
+        width: 85%;
+        padding: 14px;
+        border: none;
+        border-radius: 12px;
+        background: linear-gradient(to right, #9b00ff, #c700ff);
+        color: white;
+        font-size: 16px;
+        margin-top: 15px;
+    }
+</style>
+</head>
+
+<body>
+
+<!-- BACKGROUND -->
+<canvas id="bg"></canvas>
+
+<!-- LOGIN PAGE -->
+<div id="loginPage">
+    <div class="login-box">
+        <h2>LOGIN</h2>
+
+        <input type="text" id="user" placeholder="Username">
+        <input type="password" id="pass" placeholder="Password">
+
+        <button class="btn" onclick="login()">LOGIN</button>
+
+        <a class="link-wa" href="https://wa.me/6285126648043" target="_blank">
+            ORDER USERNAME DAN PASSWORD CLICK
+        </a>
+    </div>
+</div>
+
+<!-- MAIN PAGE -->
+<div id="mainPage">
+    <div class="container">
+        <h1>VORXAZA</h1>
+
+        <div class="box">
+            <label>Target Number</label>
+            <input type="text" placeholder="MASUKAN NO TARGET">
+
+            <label>Select Bug Vorxaza</label>
+            <select>
+                <option>SELECT BUG VORXAZA</option>
+                <option>CRASH HARD</option>
+                <option>KENON PERMANEN</option>
+                <option>STUCK WHATSAPP</option>
+            </select>
+
+            <button class="btn-large">SEND BUG </button>
+        </div>
+    </div>
+</div>
+
+<script>
+/* LOGIN SYSTEM */
+function login() {
+    const u = document.getElementById("user").value;
+    const p = document.getElementById("pass").value;
+
+    if (u === "admin" && p === "12345") {
+        document.getElementById("loginPage").style.display = "none";
+        document.getElementById("mainPage").style.display = "block";
+    } else {
+        alert("Username atau Password salah!");
+    }
+}
+
+/* BG NEON NETWORK */
+const canvas = document.getElementById("bg");
+const ctx = canvas.getContext("2d");
+
+canvas.width = innerWidth;
+canvas.height = innerHeight;
+
+let nodes = [];
+for (let i = 0; i < 60; i++) {
+    nodes.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        dx: (Math.random() - 0.5) * 0.6,
+        dy: (Math.random() - 0.5) * 0.6
+    });
+}
+
+function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    nodes.forEach(n => {
+        n.x += n.dx;
+        n.y += n.dy;
+
+        if (n.x < 0 || n.x > canvas.width) n.dx *= -1;
+        if (n.y < 0 || n.y > canvas.height) n.dy *= -1;
+
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = "#b400ff";
+        ctx.fill();
+    });
+
+    for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+            let dx = nodes[i].x - nodes[j].x;
+            let dy = nodes[i].y - nodes[j].y;
+            let dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < 160) {
+                ctx.beginPath();
+                ctx.strokeStyle = "rgba(180,0,255,0.3)";
+                ctx.lineWidth = 1;
+                ctx.moveTo(nodes[i].x, nodes[i].y);
+                ctx.lineTo(nodes[j].x, nodes[j].y);
+                ctx.stroke();
+            }
+        }
+    }
+
+    requestAnimationFrame(animate);
+}
+animate();
+</script>
+
+</body>
+</html>
