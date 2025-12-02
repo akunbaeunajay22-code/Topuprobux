@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>DEXLAZA — VIRUS</title>
+<meta name="theme-color" content="#000000">
+<style>
+  :root{
+    --bg:#000;
+    --accent1:#9b2cff;
+    --accent2:#6b2aff;
+    --glass: rgba(255,255,255,0.04);
+    --card-border: rgba(155,44,255,0.28);
+    --neon:#9b2cff;
+    --neon-2:#6b2aff;
+  }
+
+  html,body{
+    height:100%;
+    width:100%;
+    margin:0;
+    padding:0;
+    overflow:hidden;
+    font-family:Inter,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial;
+    background:#000;
+    color:#fff;
+    touch-action:manipulation;
+  }
+  body{ min-height:100vh; min-height:-webkit-fill-available; }
+
+  /* CANVAS BACKGROUND */
+  #netCanvas{position:fixed;inset:0;z-index:0;display:block;background:#000;}
+
+  /* LOGIN (neon - glassmorphism) */
+  #loginOverlay{
+    position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(180deg, rgba(0,0,0,0.7), rgba(0,0,0,0.7));
+    backdrop-filter: blur(6px);
+  }
+  .login-card{
+    width:92%;
+    max-width:420px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border-radius:16px;
+    padding:22px;
+    border:1px solid rgba(155,44,255,0.18);
+    box-shadow:0 30px 80px rgba(107,42,255,0.08);
+    text-align:center;
+    color:#fff;
+  }
+  .login-title{
+    font-size:28px;
+    font-weight:800;
+    letter-spacing:3px;
+    color:#fff;
+    text-shadow:0 8px 30px rgba(107,42,255,0.12);
+    margin-bottom:8px;
+  }
+  .login-sub{font-size:12px;color:#bfbcff;margin-bottom:14px}
+  .key-input{
+    width:100%;
+    padding:14px 12px;
+    border-radius:12px;
+    border:1px solid rgba(155,44,255,0.28);
+    background:transparent;
+    color:#fff;
+    font-size:16px;
+    outline:none;
+    box-sizing:border-box;
+    margin-bottom:12px;
+    text-align:center;
+  }
+  .login-btn{
+    width:100%;
+    padding:12px;
+    border-radius:12px;
+    border:none;
+    font-weight:800;
+    cursor:pointer;
+    background:linear-gradient(90deg,var(--accent1),var(--accent2));
+    color:white;
+    box-shadow: 0 8px 30px rgba(107,42,255,0.18);
+    font-size:16px;
+  }
+  .order-btn{
+    margin-top:10px;
+    display:block;
+    width:100%;
+    padding:10px;
+    border-radius:12px;
+    background:transparent;
+    color:#cdb8ff;
+    border:1px dashed rgba(155,44,255,0.18);
+    text-decoration:none;
+    font-weight:700;
+  }
+  .err{
+    color:#ff7b7b;
+    font-weight:700;
+    margin-top:10px;
+    height:18px;
+  }
+
+  /* MAIN UI (the card you provided) */
+  .wrap{
+    position:relative;
+    z-index:5;
+    height:100vh;
+    width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    pointer-events:none;
+  }
+
+  .card{
+    width:360px;
+    max-width:92%;
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border-radius:14px;
+    padding:22px;
+    box-shadow: 0 6px 30px rgba(0,0,0,0.6);
+    border:1px solid var(--card-border);
+    backdrop-filter: blur(6px);
+    pointer-events:auto;
+    position:relative;
+  }
+
+  h1{
+    text-align:center;
+    font-size:42px;
+    margin:6px 0 18px;
+    letter-spacing:4px;
+    color: #fff;
+    font-weight:700;
+    text-shadow:0 6px 18px rgba(107,42,255,0.12);
+  }
+
+  label{display:block;font-size:13px;color:rgba(255,255,255,0.85); margin:10px 0 6px;}
+  .input, select{
+    width:100%;
+    padding:12px 14px;
+    border-radius:12px;
+    border:1px solid rgba(155,44,255,0.3);
+    background:transparent;
+    color:#fff;
+    outline:none;
+    font-size:14px;
+    box-sizing:border-box;
+  }
+
+  .row{margin-top:12px;display:flex;gap:10px;align-items:center;}
+  button.primary{
+    margin-top:16px;
+    width:100%;
+    padding:12px;
+    border-radius:12px;
+    border:none;
+    font-weight:700;
+    cursor:pointer;
+    background:linear-gradient(90deg,var(--accent1),var(--accent2));
+    color:white;
+    box-shadow: 0 8px 30px rgba(107,42,255,0.18);
+  }
+
+  .note{font-size:12px;color:rgba(255,255,255,0.65);margin-top:8px;text-align:center;}
+
+  /* Loading overlay */
+  .overlay{
+    position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(0deg, rgba(0,0,0,0.6), rgba(0,0,0,0.6));
+    transition:opacity .45s ease, visibility .45s;
+  }
+  .overlay.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+  .loader{
+    width:420px;max-width:92%;padding:28px;border-radius:12px;background:rgba(8,8,8,0.92);
+    border:1px solid rgba(155,44,255,0.18);box-shadow:0 30px 80px rgba(0,0,0,0.7);
+    text-align:center;color:#9e9cff;
+  }
+  .scan{
+    font-family: "Courier New",monospace;
+    font-size:14px;
+    margin-top:12px;
+    color:#bfbcff;
+    height:120px;
+    overflow:hidden;
+    text-align:left;
+    padding:10px;
+    border-radius:8px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));
+  }
+
+  .glitch{
+    font-weight:900;
+    font-size:18px;
+    letter-spacing:2px;
+    color:white;
+    text-shadow: -1px 0 var(--accent1), 1px 0 var(--accent2);
+    animation: flicker 1.6s infinite;
+  }
+  @keyframes flicker{
+    0% {opacity:1;transform:translateY(0) skewX(-1deg)}
+    50% {opacity:0.85;transform:translateY(-1px) skewX(0.5deg)}
+    100% {opacity:1;transform:translateY(0) skewX(-1deg)}
+  }
+
+  /* terminal overlay during send */
+  .terminal{
+    position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(180deg, rgba(0,0,0,0.7), rgba(0,0,0,0.7));
+    pointer-events:none;
+    opacity:0;visibility:hidden;transition:opacity .25s;
+  }
+  .terminal.active{opacity:1;visibility:visible;pointer-events:auto;}
+  .term-window{
+    width:720px;max-width:94%;height:420px;border-radius:10px;padding:16px;background:#040404;
+    border:1px solid rgba(100,30,200,0.2);box-shadow:0 40px 120px rgba(0,0,0,0.7);
+    overflow:hidden;display:flex;flex-direction:column;color:#8affc1;
+  }
+  .term-header{display:flex;gap:8px;align-items:center;padding-bottom:8px;}
+  .term-dots{height:12px;width:12px;border-radius:50%;background:#ff5f56;box-shadow:0 0 8px rgba(255,95,86,0.12)}
+  .term-body{flex:1;background:#020202;padding:12px;border-radius:8px;overflow:auto;font-family:monospace;font-size:13px;}
+  .term-footer{display:flex;gap:10px;align-items:center;justify-content:space-between;padding-top:8px;}
+  .progress{width:100%;height:10px;border-radius:8px;background:rgba(255,255,255,0.04);overflow:hidden;}
+  .progress > i{display:block;height:100%;width:0%;background:linear-gradient(90deg,#6b2aff,#9b2cff);border-radius:8px;transition:width .2s linear;}
+
+  /* small modals */
+  .modal{
+    position:fixed;left:50%;top:20px;transform:translateX(-50%);z-index:70;padding:10px 16px;border-radius:10px;
+    background:#111;border:1px solid rgba(255,255,255,0.06);box-shadow:0 20px 60px rgba(0,0,0,0.6);display:none;color:#fff;font-weight:600;
+  }
+  .modal.show{display:block;}
+
+  /* success card */
+  .success{
+    position:fixed;right:18px;bottom:18px;z-index:80;padding:14px 18px;border-radius:12px;background:linear-gradient(90deg,#2af,#9b2cff);
+    color:#fff;font-weight:700;box-shadow:0 20px 60px rgba(107,42,255,0.18);
+    display:none;
+  }
+  .success.show{display:block;animation:pop .36s ease;}
+  @keyframes pop{from{transform:translateY(6px) scale(.98);opacity:0}to{transform:none;opacity:1}}
+
+  /* responsive */
+  @media(max-width:660px){ .term-window{height:60vh;} h1{font-size:34px} }
+
+  /* small helper to hide main until login */
+  #appRoot{display:none;}
+</style>
+</head>
+<body>
+
+<!-- Canvas background -->
+<canvas id="netCanvas"></canvas>
+
+<!-- LOGIN OVERLAY (neon glass) -->
+<div id="loginOverlay" role="dialog" aria-label="Login Key">
+  <div class="login-card" role="region" aria-labelledby="lnTitle">
+    <div id="lnTitle" class="login-title">DEXLAZA ACCESS</div>
+    <div class="login-sub">Masukkan Key untuk mengakses panel</div>
+    <input id="keyField" class="key-input" type="text" inputmode="numeric" placeholder="Masukkan Key Akses">
+    <button id="loginBtn" class="login-btn">LOGIN</button>
+    <a id="orderLink" class="order-btn" href="https://t.me/dexlazahardui" target="_blank" rel="noopener">ORDER KEY via TELEGRAM</a>
+    <div id="loginErr" class="err" aria-live="polite"></div>
+  </div>
+</div>
+
+<!-- APP ROOT (hidden until login success) -->
+<div id="appRoot">
+
+  <!-- Loading overlay -->
+  <div id="loadingOverlay" class="overlay">
+    <div class="loader">
+      <div style="display:flex;align-items:center;justify-content:center;gap:12px">
+        <svg width="46" height="46" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6" stroke="white" stroke-width="1.6" fill="none"/></svg>
+        <div>
+          <div class="glitch">DEXLAZA</div>
+          <div style="font-size:12px;color:#bfbcff">Initializing...</div>
+        </div>
+      </div>
+      <div class="scan" id="scanArea"></div>
+    </div>
+  </div>
+
+  <!-- Main UI -->
+  <div class="wrap">
+    <div class="card" role="main" aria-labelledby="title">
+      <h1 id="title">DEXLAZA V1</h1>
+
+      <label>Target Number</label>
+      <input id="targetInput" class="input" type="text" placeholder="MASUKAN NO TARGET (+62xxxxxx)" inputmode="numeric"/>
+
+      <label>Select Bug Dexlaza</label>
+      <select id="bugSelect" class="input" aria-label="Pilih Bug">
+        <option value="">SELECT BUG VORXAZA</option>
+        <option value="lag-exploit">SISTEM UI LEG</option>
+        <option value="crash-payload">Crash Whatsapp</option>
+        <option value="telemetry-flood">Kenon nomor</option>
+      </select>
+
+      <button id="sendBtn" class="primary">SEND BUG</button>
+      <div class="note">DEVELOPER : telegram @Dexlazaui</div>
+    </div>
+  </div>
+
+  <!-- terminal overlay -->
+  <div id="terminal" class="terminal" role="dialog" aria-hidden="true">
+    <div class="term-window">
+      <div class="term-header"><div class="term-dots"></div><div style="font-weight:700;color:#bdbdfd">DEXLAZA CONSOLE — V1</div></div>
+      <div class="term-body" id="termBody" aria-live="polite"></div>
+      <div class="term-footer">
+        <div class="progress" aria-hidden="true"><i id="progressBar"></i></div>
+        <div style="width:120px;text-align:right;font-size:13px;color:#9ee0c7" id="progPct">0%</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal" class="modal">Masukkan nomor target dulu</div>
+  <div id="successToast" class="success">Pengiriman bug berhasil</div>
+
+</div>
+
+<script>
+/* -------------------------
+   Config
+   ------------------------- */
+const VALID_KEY = "240528";                // key yang kamu berikan
+const ORDER_LINK = "https://t.me/dexlazahardui";
+
+/* -------------------------
+   Canvas background
+   ------------------------- */
+const canvas = document.getElementById('netCanvas');
+const ctx = canvas.getContext('2d');
+let dpr = Math.max(1, window.devicePixelRatio || 1);
+
+function resizeCanvas(){
+  dpr = Math.max(1, window.devicePixelRatio || 1);
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  canvas.style.width = w + "px";
+  canvas.style.height = h + "px";
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+class Node {
+  constructor(x,y){
+    this.x = x; this.y = y;
+    this.vx = (Math.random()-0.5)*0.3;
+    this.vy = (Math.random()-0.5)*0.3;
+    this.r = 1.8 + Math.random()*2;
+  }
+  step(){
+    this.x += this.vx;
+    this.y += this.vy;
+    if(this.x<0||this.x>innerWidth) this.vx *= -1;
+    if(this.y<0||this.y>innerHeight) this.vy *= -1;
+  }
+}
+const nodes = [];
+for(let i=0;i<28;i++){
+  nodes.push(new Node(Math.random()*innerWidth, Math.random()*innerHeight));
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  // subtle vignette
+  ctx.fillStyle = 'rgba(0,0,0,0.28)';
+  ctx.fillRect(0,0,innerWidth,innerHeight);
+
+  // draw connections
+  ctx.lineWidth = 1;
+  for(let i=0;i<nodes.length;i++){
+    const a = nodes[i];
+    for(let j=i+1;j<nodes.length;j++){
+      const b = nodes[j];
+      const dx = a.x-b.x, dy=a.y-b.y;
+      const dist = Math.sqrt(dx*dx+dy*dy);
+      if(dist<180){
+        const alpha = 0.12 * (1 - dist/180);
+        ctx.strokeStyle = `rgba(155,44,255,${alpha})`;
+        ctx.beginPath();
+        ctx.moveTo(a.x,a.y);
+        ctx.lineTo(b.x,b.y);
+        ctx.stroke();
+      }
+    }
+  }
+  // draw nodes
+  for(const n of nodes){
+    ctx.fillStyle = 'rgba(155,44,255,0.95)';
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, n.r, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  nodes.forEach(n => n.step());
+  requestAnimationFrame(draw);
+}
+draw();
+
+/* -------------------------
+   Loading simulation
+   ------------------------- */
+const loadingOverlay = document.getElementById('loadingOverlay');
+const scanArea = document.getElementById('scanArea');
+const logs = [
+  "[init] bootstrapping core...",
+  "[ok] network driver loaded",
+  "[scan] scanning nearby nodes...",
+  "[ok] node pool: 28",
+  "[auth] verifying handshake... ",
+  "[ok] visual modules loaded",
+  ">>> finalizing"
+];
+let li = 0;
+function showLoading(){
+  loadingOverlay.classList.remove('hidden');
+  let t = 0;
+  const interval = setInterval(()=>{
+    const line = logs[ li % logs.length ] + " " + new Date().toLocaleTimeString();
+    scanArea.innerText = (scanArea.innerText + "\n" + line).split('\n').slice(-8).join('\n');
+    li++;
+    t++;
+    if(t>10){ clearInterval(interval); setTimeout(()=>loadingOverlay.classList.add('hidden'), 600); }
+  }, 420);
+}
+
+/* -------------------------
+   Login logic (neon style)
+   ------------------------- */
+const loginOverlay = document.getElementById('loginOverlay');
+const loginBtn = document.getElementById('loginBtn');
+const keyField = document.getElementById('keyField');
+const loginErr = document.getElementById('loginErr');
+const orderLink = document.getElementById('orderLink');
+orderLink.href = ORDER_LINK;
+
+function showAppAfterLogin(){
+  // hide login overlay, show app root and run loading
+  loginOverlay.style.display = "none";
+  document.getElementById('appRoot').style.display = "block";
+  // start loading simulation then hide
+  showLoading();
+}
+
+loginBtn.addEventListener('click', ()=>{
+  const v = keyField.value.trim();
+  if(v === VALID_KEY){
+    loginErr.textContent = "";
+    showAppAfterLogin();
+  } else {
+    loginErr.textContent = "Key salah — silakan order di Telegram.";
+    keyField.animate([{transform:'translateX(0)'},{transform:'translateX(-8px)'},{transform:'translateX(8px)'},{transform:'translateX(0)'}],{duration:380});
+  }
+});
+
+// allow Enter to login
+keyField.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter') loginBtn.click();
+});
+
+/* -------------------------
+   UI interactions (sim only)
+   ------------------------- */
+const sendBtn = document.getElementById('sendBtn');
+const targetInput = document.getElementById('targetInput');
+const bugSelect = document.getElementById('bugSelect');
+const modal = document.getElementById('modal');
+const terminal = document.getElementById('terminal');
+const termBody = document.getElementById('termBody');
+const progressBar = document.getElementById('progressBar');
+const progPct = document.getElementById('progPct');
+const successToast = document.getElementById('successToast');
+
+function showModal(text="Masukkan nomor target dulu"){
+  modal.textContent = text;
+  modal.classList.add('show');
+  setTimeout(()=>modal.classList.remove('show'), 1600);
+}
+
+function showSuccess(text="Pengiriman bug berhasil Succes"){
+  successToast.textContent = text;
+  successToast.classList.add('show');
+  setTimeout(()=>successToast.classList.remove('show'), 3500);
+}
+
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+sendBtn.addEventListener('click', async ()=>{
+  const target = targetInput.value.trim();
+  const bug = bugSelect.value;
+  if(!target){
+    showModal("Masukan nomor target dulu");
+    // small shake animation
+    const el = targetInput;
+    el.animate([{transform:'translateX(0)'},{transform:'translateX(-8px)'},{transform:'translateX(8px)'},{transform:'translateX(0)'}], {duration:360});
+    return;
+  }
+  if(!bug){
+    showModal("Pilih tipe bug dulu");
+    bugSelect.animate([{transform:'translateY(0)'},{transform:'translateY(-6px)'},{transform:'translateY(0)'}], {duration:300});
+    return;
+  }
+
+  // open terminal simulated
+  terminal.classList.add('active');
+  termBody.innerHTML = "";
+  progressBar.style.width = "0%";
+  progPct.textContent = "0%";
+
+  // simulated console output
+  const steps = [
+    `> initiating session for target ${target}`,
+    `> handshaking with selector ${bug}`,
+    `> establishing simulated tunnel `,
+    `> injecting visual payload...`,
+    `> running payload sequence`,
+    `> monitoring feedback...`,
+  ];
+
+  for(let i=0;i<steps.length;i++){
+    termBody.innerHTML += `<div style="color:#9edcfa">${steps[i]}</div>`;
+    termBody.scrollTop = termBody.scrollHeight;
+    // update progress
+    const pct = Math.min(98, Math.round(((i+1)/steps.length)*70 + Math.random()*20));
+    progressBar.style.width = pct + "%";
+    progPct.textContent = pct + "%";
+    await sleep(700 + Math.random()*600);
+  }
+
+  // dramatic "hacker"-style animation (just visual)
+  termBody.innerHTML += `<div style="color:#f6d06e">> executing final routines...</div>`;
+  termBody.scrollTop = termBody.scrollHeight;
+  for(let p=70;p<=100;p++){
+    progressBar.style.width = p + "%";
+    progPct.textContent = p + "%";
+    await sleep(40 + Math.random()*50);
+  }
+
+  // show fake success and close terminal after a bit
+  termBody.innerHTML += `<div style="color:#8affc1">> DONE: VIRUS TERKIRIM BERHASIL.</div>`;
+  termBody.scrollTop = termBody.scrollHeight;
+  await sleep(900);
+  terminal.classList.remove('active');
+
+  // show success toast
+  showSuccess("Kirim bug sukses ");
+});
+
+/* allow closing terminal on ESC or click outside */
+document.addEventListener('keydown', (e)=>{ if(e.key==="Escape") terminal.classList.remove('active'); });
+terminal.addEventListener('click', (e)=>{ if(e.target === terminal) terminal.classList.remove('active'); });
+
+/* small UX: allow pressing Enter when focused on select/input */
+[targetInput, bugSelect].forEach(el=>{
+  el.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ sendBtn.click(); }});
+});
+</script>
+</body>
+</html>
