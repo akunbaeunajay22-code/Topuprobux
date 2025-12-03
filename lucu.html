@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Eilik — Robot Lucu (HTML)</title>
+  <style>
+    :root{
+      --bg:#9fd9f6;
+      --white:#ffffff;
+      --screen:#0b0b0b;
+      --accent:#7de0d9;
+      --eye:#28f0ff;
+      --shadow: rgba(0,0,0,0.12);
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    html,body{height:100%;}
+    body{
+      margin:0;
+      background:linear-gradient(180deg,var(--bg),#bfeff8 60%);
+      display:flex;align-items:center;justify-content:center;
+      padding:24px;
+    }
+
+    .card{
+      width:100%;max-width:780px;background:transparent;display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:center;
+    }
+
+    /* robot container */
+    .robot-wrap{
+      background:rgba(255,255,255,0.04);backdrop-filter: blur(6px);padding:18px;border-radius:22px;box-shadow:0 8px 30px var(--shadow);
+      display:flex;align-items:center;justify-content:center;
+    }
+
+    /* SVG scales */
+    .robot-svg{width:320px;height:320px}
+
+    /* controls */
+    .panel{background:rgba(255,255,255,0.9);padding:18px;border-radius:14px;color:#0b2540;box-shadow:0 8px 24px rgba(5,25,40,0.08)}
+    h1{font-size:20px;margin:0 0 8px}
+    p.lead{margin:6px 0 16px;color:#375b6a}
+
+    .row{display:flex;gap:8px;flex-wrap:wrap}
+    .btn{background:var(--accent);border:none;padding:10px 12px;border-radius:10px;font-weight:600;cursor:pointer}
+    .btn.secondary{background:#e6f5f4;color:#054044}
+    .btn.warn{background:#ffd7d7;color:#7b2a2a}
+
+    .log{height:160px;overflow:auto;background:#f7fcfd;border-radius:8px;padding:8px;border:1px solid #e6f8f8}
+    .input{width:100%;padding:10px;border-radius:8px;border:1px solid #d9eef1}
+    .label{font-size:12px;color:#4b6b77;margin-bottom:6px}
+
+    footer{margin-top:10px;font-size:12px;color:#2b5561}
+
+    /* small screens */
+    @media (max-width:820px){
+      .card{grid-template-columns:1fr;max-width:420px}
+      .robot-svg{width:260px;height:260px}
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="robot-wrap">
+      <!-- Robot as inline SVG so it's fully editable -->
+      <svg class="robot-svg" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg" aria-label="Eilik robot">
+        <!-- base platform -->
+        <ellipse cx="300" cy="540" rx="170" ry="24" fill="#e6fbff" opacity="0.6"/>
+
+        <!-- body -->
+        <ellipse id="body" cx="300" cy="350" rx="150" ry="190" fill="white" stroke="#e8fbfb"/>
+
+        <!-- chest accent -->
+        <path d="M210 300 Q300 260 390 300 Q360 360 240 360 Z" fill="var(--accent)" opacity="0.95"/>
+
+        <!-- face screen -->
+        <ellipse id="screen" cx="300" cy="210" rx="100" ry="90" fill="var(--screen)"/>
+
+        <!-- eyes (group) -->
+        <g id="eyes" transform="translate(0,0)">
+          <ellipse id="eye-left" cx="260" cy="200" rx="24" ry="18" fill="var(--eye)"/>
+          <ellipse id="eye-right" cx="340" cy="200" rx="24" ry="18" fill="var(--eye)"/>
+          <!-- eye shine small -->
+          <circle cx="252" cy="193" r="4" fill="#bffcff" opacity="0.9"/>
+          <circle cx="332" cy="193" r="4" fill="#bffcff" opacity="0.9"/>
+        </g>
+
+        <!-- mouth -->
+        <g id="mouth" transform="translate(0,0)">
+          <rect id="mouth-closed" x="280" y="238" width="40" height="6" rx="3" fill="var(--eye)" />
+          <ellipse id="mouth-open" cx="300" cy="244" rx="26" ry="16" fill="var(--eye)" style="display:none;"/>
+        </g>
+
+        <!-- arms -->
+        <g id="arms">
+          <rect id="arm-left" x="125" y="310" width="40" height="110" rx="22" fill="white" transform-origin="145px 360px" />
+          <rect id="arm-right" x="435" y="310" width="40" height="110" rx="22" fill="white" transform-origin="455px 360px" />
+        </g>
+
+        <!-- name text -->
+        <text x="330" y="360" font-family="Arial" font-size="20" fill="#2b6b6d">Eilik</text>
+      </svg>
+    </div>
+
+    <div class="panel">
+      <h1>Eilik — Robot Lucu (HTML)</h1>
+      <p class="lead">Mata berkedip, ekspresi otomatis, mulut bergerak saat bicara, dan tombol suara. Gratis & offline (AI mini).</p>
+
+      <div class="label">Kontrol</div>
+      <div class="row" style="margin-bottom:12px">
+        <button id="btn-listen" class="btn">🎤 Dengarkan</button>
+        <button id="btn-speak" class="btn secondary">🗣️ Uji Bicara</button>
+        <button id="btn-wakeup" class="btn">🔔 Wakeword</button>
+        <button id="btn-random" class="btn secondary">✨ Ekspresi Acak</button>
+      </div>
+
+      <div class="label">Ketik pesan ke Eilik</div>
+      <div class="row" style="margin-bottom:8px">
+        <input id="text-in" class="input" placeholder="Tulis sesuatu..." />
+        <button id="btn-send" class="btn">Kirim</button>
+      </div>
+
+      <div class="label">Log</div>
+      <div id="log" class="log"></div>
+
+      <footer>
+        Dibuat otomatis. Mode suara menggunakan Web Speech API (Chrome/Edge). Kalau browser tidak mendukung, gunakan tombol kirim.
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    // Simple interactive behaviour
+    const eyeLeft = document.getElementById('eye-left')
+    const eyeRight = document.getElementById('eye-right')
+    const mouthClosed = document.getElementById('mouth-closed')
+    const mouthOpen = document.getElementById('mouth-open')
+    const arms = document.getElementById('arms')
+    const logEl = document.getElementById('log')
+
+    const btnListen = document.getElementById('btn-listen')
+    const btnSpeak = document.getElementById('btn-speak')
+    const btnWake = document.getElementById('btn-wakeup')
+    const btnRandom = document.getElementById('btn-random')
+    const btnSend = document.getElementById('btn-send')
+    const textIn = document.getElementById('text-in')
+
+    // small AI mini responses
+    function aiMini(text){
+      text = text.toLowerCase()
+      if(text.includes('halo') || text.includes('hi')) return 'Halo! Aku Eilik yang lucu 😊'
+      if(text.includes('nama')) return 'Namaku Eilik. Senang bertemu!'
+      if(text.includes('kamu bisa')) return 'Aku bisa berkedip, bicara, dan bergaya lucu. Coba perintah lain!'
+      if(text.includes('tidur')) return 'Zzz... selamat tidur ya.'
+      if(text.includes('apa kabar')) return 'Baik! Terima kasih sudah bertanya.'
+      return 'Hehe, aku belum ngerti itu, tapi aku tetap lucu 😄'
+    }
+
+    // logging helper
+    function log(msg){
+      const time = new Date().toLocaleTimeString()
+      logEl.innerHTML = `<div><strong>[${time}]</strong> ${msg}</div>` + logEl.innerHTML
+    }
+
+    // blink animation
+    let blinkTimeout
+    function blink(){
+      eyeLeft.setAttribute('rx', 1)
+      eyeLeft.setAttribute('ry', 3)
+      eyeRight.setAttribute('rx', 1)
+      eyeRight.setAttribute('ry', 3)
+      setTimeout(()=>{
+        eyeLeft.setAttribute('rx', 24)
+        eyeLeft.setAttribute('ry', 18)
+        eyeRight.setAttribute('rx', 24)
+        eyeRight.setAttribute('ry', 18)
+      },120)
+      // schedule next
+      clearTimeout(blinkTimeout)
+      blinkTimeout = setTimeout(blink, 2000 + Math.random()*3000)
+    }
+    blinkTimeout = setTimeout(blink, 1200)
+
+    // random tiny arm wave
+    function waveArms(){
+      const left = document.getElementById('arm-left')
+      const right = document.getElementById('arm-right')
+      left.style.transform = `rotate(${ -10 + Math.random()*20}deg)`
+      right.style.transform = `rotate(${ 10 - Math.random()*20}deg)`
+    }
+    setInterval(waveArms, 800)
+
+    // mouth open/close when speaking
+    let speaking = false
+    function setSpeaking(on){
+      speaking = on
+      if(on){ mouthClosed.style.display='none'; mouthOpen.style.display='block' }
+      else { mouthClosed.style.display='block'; mouthOpen.style.display='none' }
+    }
+
+    // Web Speech synthesis (text-to-speech)
+    function speak(text, opts={}){
+      if(!('speechSynthesis' in window)){
+        log('Browser tidak mendukung speech synthesis')
+        return Promise.resolve()
+      }
+      return new Promise(resolve => {
+        const u = new SpeechSynthesisUtterance(text)
+        u.lang = 'id-ID'
+        u.rate = opts.rate || 1
+        u.pitch = opts.pitch || 1
+        // simple robotic effect: increase pitch slightly
+        u.onstart = ()=>{ setSpeaking(true); log('Eilik berkata: '+text) }
+        u.onend = ()=>{ setSpeaking(false); resolve() }
+        speechSynthesis.cancel()
+        speechSynthesis.speak(u)
+      })
+    }
+
+    // Speech recognition (if available)
+    let recognition = null
+    if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition
+      recognition = new SR()
+      recognition.lang = 'id-ID'
+      recognition.interimResults = false
+      recognition.maxAlternatives = 1
+
+      recognition.onresult = (ev)=>{
+        const text = ev.results[0][0].transcript
+        log('Anda mengatakan: '+text)
+        const reply = aiMini(text)
+        speak(reply)
+      }
+      recognition.onerror = (e)=>{ log('Recognition error: '+e.error) }
+      recognition.onend = ()=>{ /* auto-restart handled by button if needed */ }
+    }
+
+    btnListen.addEventListener('click', ()=>{
+      if(!recognition){ log('Speech recognition tidak tersedia di browser ini.'); return }
+      try{
+        recognition.start(); log('Mendengarkan...')
+      }catch(e){ log('Gagal memulai: '+e.message) }
+    })
+
+    btnSpeak.addEventListener('click', ()=>{
+      const sample = 'Hai! Aku Eilik, robot lucu. Aku suka berkedip dan bergoyang.'
+      speak(sample, {rate:1, pitch:1.1})
+    })
+
+    btnWake.addEventListener('click', async ()=>{
+      // simple wakeword: listens then if hear 'eilik' respond
+      if(!recognition){ log('Speech recognition tidak tersedia.'); return }
+      log('Mode wakeword aktif: ucapkan "Eilik"')
+      recognition.start()
+      recognition.onresult = (ev)=>{
+        const text = ev.results[0][0].transcript.toLowerCase()
+        log('Wake heard: '+text)
+        if(text.includes('eilik')){
+          speak('Ya? Aku terbangun!').then(()=>{
+            // restore default handler
+            recognition.onresult = (ev)=>{
+              const text2 = ev.results[0][0].transcript
+              log('Anda mengatakan: '+text2)
+              const reply = aiMini(text2)
+              speak(reply)
+            }
+          })
+        } else {
+          speak('Belum memanggil namaku.')
+        }
+      }
+    })
+
+    btnRandom.addEventListener('click', ()=>{
+      // random expression change
+      const states = ['happy','sad','normal']
+      const s = states[Math.floor(Math.random()*states.length)]
+      if(s==='happy'){
+        eyeLeft.setAttribute('rx', 30); eyeLeft.setAttribute('ry', 10);
+        eyeRight.setAttribute('rx', 30); eyeRight.setAttribute('ry', 10);
+        speak('Wiii, aku senang!')
+      } else if(s==='sad'){
+        eyeLeft.setAttribute('rx', 20); eyeLeft.setAttribute('ry', 28);
+        eyeRight.setAttribute('rx', 20); eyeRight.setAttribute('ry', 28);
+        speak('Huhu...')
+      } else {
+        eyeLeft.setAttribute('rx', 24); eyeLeft.setAttribute('ry', 18);
+        eyeRight.setAttribute('rx', 24); eyeRight.setAttribute('ry', 18);
+        speak('Balik ke normal!')
+      }
+      log('Ekspresi: '+s)
+    })
+
+    btnSend.addEventListener('click', ()=>{
+      const t = textIn.value.trim()
+      if(!t) return
+      log('Kamu: '+t)
+      const r = aiMini(t)
+      speak(r)
+      textIn.value=''
+    })
+
+    // small auto-blink already set; also random expression occasionally
+    setInterval(()=>{
+      if(Math.random() < 0.06) {
+        btnRandom.click()
+      }
+    }, 2500)
+
+    // initial greeting
+    setTimeout(()=>{
+      speak('Halo! Aku Eilik. Ayo ngobrol!')
+    },800)
+  </script>
+</body>
+</html>
