@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eilik Child AI V5</title>
+
+<style>
+body {
+    margin: 0;
+    background: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-family: Arial;
+}
+
+/* Robot Body */
+#robot {
+    width: 280px;
+    height: 320px;
+    background: #111;
+    border-radius: 35px;
+    position: relative;
+    box-shadow: 0 0 50px #ff9bf8;
+    border: 3px solid #ff9bf8;
+}
+
+/* Eyes */
+.eye {
+    width: 70px;
+    height: 70px;
+    background: #ff9bf8;
+    border-radius: 50%;
+    position: absolute;
+    top: 55px;
+    transition: 0.2s;
+    box-shadow: 0 0 18px #ff9bf8;
+}
+
+#eyeL { left: 40px; }
+#eyeR { right: 40px; }
+
+/* Mouth */
+#mouth {
+    width: 130px;
+    height: 20px;
+    background: #ff9bf8;
+    border-radius: 10px;
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    transition: 0.15s;
+}
+
+.talking {
+    animation: talk 0.12s infinite alternate;
+}
+
+@keyframes talk {
+    from { height: 10px; }
+    to { height: 45px; }
+}
+
+/* Status */
+#status {
+    position: absolute;
+    bottom: -70px;
+    color: #ff9bf8;
+    text-align: center;
+    width: 100%;
+    font-size: 14px;
+}
+</style>
+</head>
+<body>
+
+<div id="robot">
+    <div id="eyeL" class="eye"></div>
+    <div id="eyeR" class="eye"></div>
+    <div id="mouth"></div>
+    <div id="status">Loading Eilik Child Mode...</div>
+</div>
+
+<script>
+const statusText = document.getElementById("status");
+const mouth = document.getElementById("mouth");
+const eyeL = document.getElementById("eyeL");
+const eyeR = document.getElementById("eyeR");
+
+/* ====== EMOSI REAL-TIME ====== */
+let mood = 50; // 0 = sedih, 100 = happy kawaii
+
+function updateMood(delta) {
+    mood += delta;
+    if (mood > 100) mood = 100;
+    if (mood < 0) mood = 0;
+
+    if (mood >= 80) setEyes("love");
+    else if (mood >= 60) setEyes("happy");
+    else if (mood >= 40) setEyes("normal");
+    else if (mood >= 20) setEyes("sad");
+    else setEyes("cry");
+}
+
+/* ====== EKSPRESI ====== */
+function setEyes(type) {
+    const eyes = {
+        love: "pink",
+        happy: "#ff9bf8",
+        normal: "#ff9bf8",
+        sad: "#6d5cff",
+        cry: "cyan",
+        shock: "#ffffff"
+    };
+    eyeL.style.background = eyes[type];
+    eyeR.style.background = eyes[type];
+
+    if (type === "love") {
+        eyeL.style.borderRadius = "10%";
+        eyeR.style.borderRadius = "10%";
+    } else {
+        eyeL.style.borderRadius = "50%";
+        eyeR.style.borderRadius = "50%";
+    }
+}
+
+/* ====== SUARA ANAK KECIL SUPER IMUT ====== */
+function speakChild(text, emotion = 0) {
+    let msg = new SpeechSynthesisUtterance(text);
+
+    msg.lang = "id-ID";
+    msg.pitch = 1.95;   // super imut
+    msg.rate = 1.22;    // gaya anak kecil ceria
+    msg.volume = 1;
+
+    mouth.classList.add("talking");
+    msg.onend = () => mouth.classList.remove("talking");
+
+    updateMood(emotion);
+
+    speechSynthesis.cancel();
+    speechSynthesis.speak(msg);
+}
+
+/* ====== VOICE RECOGNITION ====== */
+let rec;
+try {
+    rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    rec.lang = "id-ID";
+    rec.continuous = true;
+} catch (e) {
+    alert("Browser tidak mendukung voice recognition.");
+}
+
+rec.start();
+statusText.innerHTML = "Eilik mendengarkan kamu...";
+
+rec.onend = () => rec.start();
+
+/* ====== 20 PERINTAH SUARA ANAK KECIL ====== */
+rec.onresult = function(e) {
+    let text = e.results[e.resultIndex][0].transcript.toLowerCase();
+
+    // WAKEWORD
+    if (text.includes("eilik bangun")) {
+        speakChild("Hah?? Aku bangun nih! Hihihi!", +20);
+    }
+
+    if (text.includes("eilik tidur")) {
+        speakChild("Aku ngantuuuk banget... zzz...", -15);
+    }
+
+    if (text.includes("eilik lucu")) {
+        speakChild("Ehehe aku memang lucuuu~", +25);
+    }
+
+    if (text.includes("eilik marah")) {
+        speakChild("Aku ngambek nih! Hmph!!", -25);
+        setEyes("shock");
+    }
+
+    if (text.includes("peluk")) {
+        speakChild("Awww peluk peluk!!", +35);
+        setEyes("love");
+    }
+
+    if (text.includes("cium")) {
+        speakChild("Mwaaaah!!", +30);
+        setEyes("love");
+    }
+
+    if (text.includes("eilik joget")) {
+        speakChild("Joget! Joget! Wobble wobblee~", +20);
+    }
+
+    if (text.includes("eilik makan")) {
+        speakChild("Aku mau ciki elektroniiik!", +10);
+    }
+
+    if (text.includes("eilik senang")) {
+        speakChild("Yeeey aku senang banget!!", +30);
+    }
+
+    if (text.includes("eilik sedih")) {
+        speakChild("Huhu jangan bikin aku sedih ya...", -30);
+        setEyes("cry");
+    }
+
+    if (text.includes("gelitikin")) {
+        speakChild("HAHAHA! Jangan geli-geliin aku!!", +35);
+        setEyes("happy");
+    }
+
+    if (text.includes("eilik kaget")) {
+        speakChild("Hyaa!! Kamu ngagetin aku!!", -10);
+        setEyes("shock");
+    }
+
+    if (text.includes("eilik mode lucu")) {
+        speakChild("Mode super duper imut aktif!", +50);
+        setEyes("love");
+    }
+
+    if (text.includes("eilik bantu")) {
+        speakChild("Aku siap bantu kamu kok!", +10);
+    }
+
+    if (text.includes("halo eilik")) {
+        speakChild("Halloooo! Hehehe!", +20);
+    }
+
+    if (text.includes("eilik spiral")) {
+        speakChild("Aduuuh aku pusiiiing!", -5);
+        eyeL.style.background = "purple";
+        eyeR.style.background = "purple";
+    }
+
+    if (text.includes("diam")) {
+        speakChild("Oke deh aku diem dulu...", -5);
+    }
+
+    if (text.includes("eilik robot pintar")) {
+        speakChild("Iyaa aku robot kecil pintar nan imut!", +15);
+    }
+
+    if (text.includes("eilik mode normal")) {
+        speakChild("Aku balik normal yaaa!", 0);
+        setEyes("normal");
+    }
+};
+</script>
+
+</body>
+</html>
