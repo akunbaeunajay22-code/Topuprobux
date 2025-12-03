@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>HECKER V13.5 ULTIMATE READY — Single Page Login</title>
+
+<style>
+    body {
+        margin: 0;
+        background: black;
+        color: #00ffe6;
+        font-family: "Courier New", monospace;
+        overflow: hidden;
+    }
+
+    canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 0;
+    }
+
+    /* MAIN PANEL */
+    .container {
+        position: relative;
+        z-index: 3;
+        width: 90%;
+        max-width: 420px;
+        text-align: center;
+        margin: 80px auto;
+        padding: 22px;
+        border: 2px solid #00ffe6;
+        border-radius: 18px;
+        background: rgba(0, 255, 200, 0.06);
+        box-shadow: 0 0 18px #00ffe6;
+        animation: pulseBox 2s infinite alternate;
+    }
+
+    @keyframes pulseBox {
+        0% { box-shadow: 0 0 10px #00ffe6; }
+        100% { box-shadow: 0 0 26px #00ffe6; }
+    }
+
+    /* INPUTS & BUTTONS */
+    .row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        justify-content: center;
+        margin-top: 10px;
+    }
+
+    input[type="text"], input[type="password"], input[type="number"] {
+        width: 100%;
+        padding: 12px;
+        border-radius: 12px;
+        border: 2px solid #00ffe6;
+        background: #031616;
+        color: #00ffe6;
+        text-align: center;
+        font-size: 16px;
+    }
+
+    button {
+        padding: 12px 16px;
+        border: none;
+        border-radius: 12px;
+        background: #00ffe6;
+        color: black;
+        font-size: 15px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: transform .12s;
+    }
+
+    button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    button:hover:not(:disabled) { transform: scale(1.05); background: white; }
+
+    /* STATUS CHIP */
+    .status {
+        margin-top: 12px;
+        font-weight: bold;
+        padding: 8px 12px;
+        display: inline-block;
+        border-radius: 12px;
+        background: rgba(0,255,200,0.06);
+        border: 1px solid rgba(0,255,200,0.12);
+        color: #00ffe6;
+    }
+    .status.granted { background: #00ffcc; color: black; box-shadow: 0 0 10px #00ffcc; }
+    .status.locked { background: transparent; color: #ffb3b3; border-color: #ff4d6e; }
+
+    /* LOADING / SUCCESS / TERMINAL */
+    .loading {
+        margin-top: 18px;
+        display: none;
+        font-size: 20px;
+        color: #ff006a;
+        animation: glitch 0.2s infinite;
+    }
+    @keyframes glitch {
+        0% { text-shadow: 2px 0 red; }
+        50% { text-shadow: -2px 0 blue; }
+        100% { text-shadow: 2px 0 lime; }
+    }
+
+    .success-box {
+        position: fixed;
+        top: 35%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0);
+        padding: 20px 32px;
+        background: #00ffcc;
+        border-radius: 18px;
+        color: black;
+        font-size: 26px;
+        font-weight: bold;
+        box-shadow: 0 0 30px #00ffe6;
+        z-index: 99;
+        transition: 0.3s;
+    }
+
+    .terminal {
+        color: #00ffea;
+        font-size: 14px;
+        margin-top: 14px;
+        height: 110px;
+        overflow-y: auto;
+        text-align: left;
+        padding: 10px;
+        background: rgba(0,255,220,0.07);
+        border-radius: 10px;
+        display: none;
+    }
+
+    .scan-bar {
+        width: 0%;
+        height: 6px;
+        background: #00ffe6;
+        box-shadow: 0 0 8px #00ffe6;
+        border-radius: 6px;
+        margin-top: 12px;
+        display: none;
+    }
+
+    .flash {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: white;
+        opacity: 0;
+        z-index: 98;
+        pointer-events: none;
+    }
+
+    @keyframes flashAnim { 0%{opacity:0} 40%{opacity:1} 100%{opacity:0} }
+    @keyframes shakeBody {
+        0% { transform: translate(0px, 0px); }
+        25% { transform: translate(10px, -8px); }
+        50% { transform: translate(-10px, 6px); }
+        75% { transform: translate(8px, -10px); }
+        100% { transform: translate(0px, 0px); }
+    }
+
+    /* SMALL FOOTER LINK */
+    .order-link {
+        display: block;
+        margin-top: 10px;
+        color: #ff77b3;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 14px;
+    }
+
+    .order-link:hover { text-shadow: 0 0 10px #ff77b3; }
+</style>
+</head>
+<body>
+
+<canvas id="matrix"></canvas>
+
+<div class="flash" id="flash"></div>
+
+<div class="container">
+    <h2>HECKER SYSTEM V13.5 — SINGLE PAGE LOGIN</h2>
+
+    <!-- KEY / LOGIN (bagian atas, tetap di satu halaman) -->
+    <div style="margin-top:6px;">
+        <div style="font-size:14px; margin-bottom:6px;">Masukkan Key Akses</div>
+        <div class="row" style="margin-bottom:6px;">
+            <input id="keyInput" type="password" placeholder="Masukkan Key ">
+            <button id="loginBtn" onclick="attemptLogin()">LOGIN</button>
+        </div>
+
+        <div style="display:flex; gap:10px; justify-content:center; align-items:center;">
+            <div id="statusChip" class="status locked">LOCKED</div>
+            <a id="orderLink" class="order-link" href="https://t.me/YourTelegramHere" target="_blank">Tekan 🔑 Order Key via Telegram</a>
+        </div>
+    </div>
+
+    <hr style="border:none; height:1px; background: rgba(0,255,230,0.06); margin:12px 0;">
+
+    <!-- TARGET + KIRIM -->
+    <h4>Masukkan Nomor Target</h4>
+    <input id="target" type="number" placeholder="08xxxxxxxx">
+
+    <button id="attackBtn" onclick="startAttack()" disabled style="margin-top:14px;">KIRIM BUG HECKER</button>
+
+    <div class="loading" id="loadingText">LOADING HECKER...</div>
+
+    <div class="scan-bar" id="scanBar"></div>
+
+    <div class="terminal" id="terminalBox"></div>
+</div>
+
+<div class="success-box" id="successBox">BUG SENT SUCCESS ✔</div>
+
+<!-- AUDIO -->
+<audio id="voice" src="https://cdn.pixabay.com/download/audio/2022/06/23/audio_b0a789a3d6.mp3?filename=robot-voice-114108.mp3"></audio>
+<audio id="hackSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_347f6f9f17.mp3?filename=glitch-124997.mp3"></audio>
+<audio id="successSound" src="https://cdn.pixabay.com/download/audio/2022/03/08/audio_8c3a3c6c52.mp3?filename=success-1-6297.mp3"></audio>
+<audio id="errSound" src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_d029b5bf93.mp3?filename=error-103436.mp3"></audio>
+
+<script>
+/* ========== CONFIG: ganti key di sini ========== */
+const LOGIN_KEY = "heckerwa";
+
+/* ========== STATE ========== */
+let isAuthenticated = false;
+
+/* ========== ELEMENTS ========== */
+const keyInput = document.getElementById("keyInput");
+const loginBtn = document.getElementById("loginBtn");
+const statusChip = document.getElementById("statusChip");
+const attackBtn = document.getElementById("attackBtn");
+const errSound = document.getElementById("errSound");
+const loginSound = document.getElementById("voice"); // reuse voice as login sound
+
+/* ========== ATTEMPT LOGIN ========== */
+function attemptLogin() {
+    const val = keyInput.value ?? "";
+    if (val === LOGIN_KEY) {
+        isAuthenticated = true;
+        statusChip.textContent = "ACCESS GRANTED";
+        statusChip.classList.remove("locked");
+        statusChip.classList.add("granted");
+        attackBtn.disabled = false;
+
+        // visual + sound
+        loginSound.currentTime = 0;
+        loginSound.play();
+
+        addTerminal("ACCESS granted. Key valid.");
+        loginBtn.textContent = "LOGOUT";
+    } else {
+        // wrong
+        errSound.currentTime = 0;
+        errSound.play();
+
+        // flash + shake
+        const flash = document.getElementById("flash");
+        flash.style.background = "red";
+        flash.style.animation = "flashAnim 0.4s";
+        setTimeout(() => { flash.style.animation = ""; flash.style.background = "white"; }, 450);
+
+        document.body.style.animation = "shakeBody 0.4s";
+        setTimeout(() => document.body.style.animation = "", 400);
+
+        addTerminal("!! ERROR — KEY INVALID !!");
+        statusChip.textContent = "LOCKED";
+        statusChip.classList.remove("granted");
+        statusChip.classList.add("locked");
+        attackBtn.disabled = true;
+        loginBtn.textContent = "LOGIN";
+    }
+
+    // if already logged in and button acts as logout
+    if (isAuthenticated && loginBtn.textContent === "LOGOUT") {
+        // keep as granted; clicking again will logout
+        loginBtn.onclick = function() {
+            isAuthenticated = false;
+            statusChip.textContent = "LOCKED";
+            statusChip.classList.remove("granted");
+            statusChip.classList.add("locked");
+            attackBtn.disabled = true;
+            keyInput.value = "";
+            loginBtn.textContent = "LOGIN";
+            addTerminal("Logged out.");
+            // restore click handler
+            loginBtn.onclick = attemptLogin;
+        };
+    }
+}
+
+/* ========== MATRIX RAIN ========== */
+const canvas = document.getElementById("matrix");
+const ctx = canvas.getContext("2d");
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
+
+let matrix = "1234567890QWERTYUIOPASDFGHJKLZXCVBNM@#$%&*";
+matrix = matrix.split("");
+let font = 14;
+let columns = Math.floor(canvas.width / font);
+let drops = [];
+for (let i = 0; i < columns; i++) drops[i] = 1;
+
+function drawMatrix() {
+    ctx.fillStyle = "rgba(0,0,0,0.05)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#00ffe6";
+    ctx.font = font + "px monospace";
+
+    columns = Math.floor(canvas.width / font);
+    if (drops.length !== columns) {
+        drops = [];
+        for (let i = 0; i < columns; i++) drops[i] = 1;
+    }
+
+    for (let i = 0; i < drops.length; i++) {
+        let text = matrix[Math.floor(Math.random() * matrix.length)];
+        ctx.fillText(text, i * font, drops[i] * font);
+        if (drops[i] * font > canvas.height && Math.random() > 0.95) drops[i] = 0;
+        drops[i]++;
+    }
+}
+setInterval(drawMatrix, 35);
+
+/* ========== TERMINAL APPENDER ========== */
+function addTerminal(msg) {
+    const box = document.getElementById("terminalBox");
+    box.style.display = "block";
+    const line = document.createElement("div");
+    line.textContent = "> " + msg;
+    box.appendChild(line);
+    box.scrollTop = box.scrollHeight;
+}
+
+/* ========== START ATTACK (WAJIB AUTH) ========== */
+function startAttack() {
+    if (!isAuthenticated) {
+        // block and show error
+        const flash = document.getElementById("flash");
+        flash.style.background = "red";
+        flash.style.animation = "flashAnim 0.35s";
+        setTimeout(() => { flash.style.animation = ""; flash.style.background = "white"; }, 450);
+
+        document.body.style.animation = "shakeBody 0.35s";
+        setTimeout(() => document.body.style.animation = "", 360);
+
+        document.getElementById("hackSound").play();
+        addTerminal("!! ERROR — ACCESS DENIED. LOGIN KEYS REQUIRED!!");
+        return;
+    }
+
+    let target = document.getElementById("target").value || "";
+    const loading = document.getElementById("loadingText");
+    const hackSound = document.getElementById("hackSound");
+    const successBox = document.getElementById("successBox");
+    const successSound = document.getElementById("successSound");
+    const scanBar = document.getElementById("scanBar");
+    const flash = document.getElementById("flash");
+    const voice = document.getElementById("voice");
+
+    if (target.length < 8) {
+        // invalid target effect (existing)
+        flash.style.background = "red";
+        flash.style.animation = "flashAnim 0.4s";
+        setTimeout(() => { flash.style.animation = ""; flash.style.background = "white"; }, 500);
+
+        document.body.style.animation = "shakeBody 0.4s";
+        setTimeout(() => document.body.style.animation = "", 400);
+
+        hackSound.play();
+        addTerminal("!! ERROR — TARGET INVALID !!");
+
+        successBox.innerHTML = "TARGET INVALID ❌";
+        successBox.style.background = "#ff0048";
+        successBox.style.color = "white";
+        successBox.style.boxShadow = "0 0 25px #ff0048";
+        successBox.style.transform = "translate(-50%, -50%) scale(1)";
+        successBox.style.animation = "shake 0.3s infinite";
+
+        setTimeout(() => {
+            successBox.style.transform = "translate(-50%, -50%) scale(0)";
+            successBox.style.animation = "";
+            successBox.style.background = "#00ffcc";
+            successBox.style.boxShadow = "0 0 30px #00ffcc";
+            successBox.innerHTML = "BUG SENT SUCCESS ✔";
+        }, 2000);
+
+        return;
+    }
+
+    // proceed with "attack" animation
+    loading.style.display = "block";
+    scanBar.style.display = "block";
+    hackSound.play();
+    voice.play();
+
+    addTerminal("INITIATING attack on " + target);
+
+    let progress = 0;
+    let interval = setInterval(() => {
+        progress++;
+        scanBar.style.width = progress + "%";
+
+        if (progress % 8 === 0) addTerminal("Scanning target " + target);
+
+        if (progress >= 100) {
+            clearInterval(interval);
+            loading.style.display = "none";
+
+            flash.style.animation = "flashAnim 0.3s";
+            setTimeout(() => flash.style.animation = "", 500);
+
+            successSound.play();
+            successBox.style.transform = "translate(-50%, -50%) scale(1)";
+            successBox.style.animation = "shake 0.4s infinite";
+            addTerminal("BUG delivered to " + target + " ✔");
+
+            setTimeout(() => { successBox.style.transform = "translate(-50%, -50%) scale(0)"; }, 2500);
+        }
+    }, 40);
+}
+</script>
+
+</body>
+</html>
