@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Robot AI — Level 4 (Siap Pakai)</title>
+
+<style>
+  :root{ --bg:#05060a; --face:#0e141b; --eye:#7de7ff; --mouth:#7de7ff; --accent:#12e1ff; }
+  html,body{ height:100%; margin:0; font-family:Inter,system-ui,Arial; background:linear-gradient(180deg,#02060a,#07101a); color:#dffaff; -webkit-font-smoothing:antialiased; display:flex; align-items:center; justify-content:center; }
+  .stage { width:760px; max-width:96vw; height:520px; background:rgba(255,255,255,0.02); border-radius:14px; position:relative; box-shadow: 0 20px 60px rgba(0,0,0,0.6); overflow:hidden; display:flex; gap:16px; padding:18px; }
+  /* Left: robot view */
+  .panel { flex:1; display:flex; align-items:center; justify-content:center; position:relative; }
+  .robot {
+    width:320px; height:240px; background:var(--face); border-radius:24px; position:relative; box-shadow: inset 0 0 60px #0009, 0 0 40px rgba(18,225,255,0.08);
+    display:flex; flex-direction:column; align-items:center; padding-top:22px;
+    transition: all .45s ease;
+  }
+  .eyes { display:flex; gap:44px; align-items:center; justify-content:center; width:100%; }
+  .eye {
+    width:74px; height:44px; background:var(--eye); border-radius:0 0 40px 40px; box-shadow: 0 0 20px #6ceeff; transform-origin:center;
+    transition: transform .12s linear, background .2s ease, width .25s ease, height .25s ease;
+    position:relative;
+    overflow:visible;
+  }
+  .eye::after{ content:""; position:absolute; top:6px; left:12px; width:18px; height:18px; border-radius:50%; background:rgba(255,255,255,0.18); filter:blur(1px); }
+  .mouth {
+    width:140px; height:12px; background:var(--mouth); border-radius:30px; margin-top:26px; box-shadow: 0 0 20px #69e4ff; transition: height .08s linear, width .12s linear, background .2s ease, border-radius .2s ease;
+  }
+
+  /* right panel: controls & preview */
+  .panel-right { width:360px; padding:12px; display:flex; flex-direction:column; gap:12px; }
+  .controls { display:flex; gap:8px; flex-wrap:wrap; }
+  button { background:linear-gradient(180deg,var(--accent),#07b4d9); border:none; color:#002; padding:9px 12px; border-radius:10px; font-weight:700; cursor:pointer; box-shadow:0 6px 18px rgba(0,200,255,0.08); }
+  button.secondary { background:transparent; color:var(--accent); border:1px solid rgba(125,231,255,0.12); box-shadow:none; padding:8px 10px; }
+  .status { font-size:13px; color:#9feff8; }
+  video { width:100%; height:220px; object-fit:cover; border-radius:8px; background:#000; }
+  .hud { font-size:13px; color:#c7fbff; background:rgba(255,255,255,0.02); padding:8px; border-radius:8px; }
+  .modes { display:flex; gap:8px; flex-wrap:wrap; }
+  .mode-pill { background:rgba(255,255,255,0.02); padding:6px 8px; border-radius:8px; font-size:13px; color:#9feff8; border:1px solid rgba(125,231,255,0.05); }
+  /* emotion styles */
+  .robot.happy { box-shadow: inset 0 0 80px rgba(0,255,160,0.06), 0 0 60px rgba(0,255,160,0.06); }
+  .robot.angry { box-shadow: inset 0 0 80px rgba(255,40,40,0.05), 0 0 60px rgba(255,40,40,0.05); }
+  .robot.sad { box-shadow: inset 0 0 80px rgba(80,120,255,0.03), 0 0 40px rgba(80,120,255,0.03); }
+  .robot.surprised { box-shadow: inset 0 0 80px rgba(255,230,80,0.03), 0 0 50px rgba(255,230,80,0.03); }
+
+  /* mouth visemes */
+  .viseme-0 { height:10px; width:140px; border-radius:30px; }  /* closed */
+  .viseme-1 { height:20px; width:110px; border-radius:20px; }  /* half */
+  .viseme-2 { height:50px; width:90px; border-radius:40px; }   /* open */
+
+  .footer-note { font-size:12px; color:#95f1ff66; }
+</style>
+</head>
+<body>
+
+<div class="stage" role="main">
+  <div class="panel">
+    <div class="robot" id="robot">
+      <div class="eyes">
+        <div class="eye" id="eyeL"></div>
+        <div class="eye" id="eyeR"></div>
+      </div>
+      <div class="mouth viseme-0" id="mouth"></div>
+    </div>
+  </div>
+
+  <div class="panel-right">
+    <div class="controls">
+      <button id="startBtn">Start Camera & Mic</button>
+      <button id="stopBtn" class="secondary">Stop</button>
+      <button id="speakBtn" class="secondary">Speak (TTS)</button>
+    </div>
+
+    <div class="hud" id="hud">Status: Idle • Emotion: neutral • Viseme: closed</div>
+
+    <div style="display:flex; gap:8px;">
+      <div style="flex:1">
+        <div style="font-size:13px; color:#9feff8; margin-bottom:6px">Camera Preview</div>
+        <video id="video" autoplay muted playsinline></video>
+      </div>
+      <div style="width:120px; display:flex; flex-direction:column; gap:8px; justify-content:flex-start;">
+        <div style="font-size:13px; color:#9feff8; margin-bottom:6px">Live Metrics</div>
+        <div class="mode-pill" id="volPill">Vol: 0.00</div>
+        <div class="mode-pill" id="pitchPill">Pitch: 0 Hz</div>
+        <div class="mode-pill" id="modePill">Mode: neutral</div>
+      </div>
+    </div>
+
+    <div style="margin-top:10px">
+      <div style="font-size:13px; color:#9feff8; margin-bottom:6px">Quick modes (manual)</div>
+      <div class="modes">
+        <div class="mode-pill" onclick="applyManual('neutral')">neutral</div>
+        <div class="mode-pill" onclick="applyManual('happy')">happy</div>
+        <div class="mode-pill" onclick="applyManual('angry')">angry</div>
+        <div class="mode-pill" onclick="applyManual('sad')">sad</div>
+        <div class="mode-pill" onclick="applyManual('surprised')">surprised</div>
+      </div>
+    </div>
+
+    <div style="flex:1"></div>
+
+    <div class="footer-note">Double-check camera permissions if preview is black. All processing local in browser.</div>
+  </div>
+</div>
+
+<!-- face-api (for face detection & expressions) -->
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
+<script>
+(async ()=>{
+  const startBtn = document.getElementById('startBtn');
+  const stopBtn  = document.getElementById('stopBtn');
+  const speakBtn = document.getElementById('speakBtn');
+  const videoEl  = document.getElementById('video');
+  const hud      = document.getElementById('hud');
+  const volPill  = document.getElementById('volPill');
+  const pitchPill= document.getElementById('pitchPill');
+  const modePill = document.getElementById('modePill');
+  const robot    = document.getElementById('robot');
+  const eyeL     = document.getElementById('eyeL');
+  const eyeR     = document.getElementById('eyeR');
+  const mouthEl  = document.getElementById('mouth');
+
+  let stream = null;
+  let audioCtx = null;
+  let analyser = null;
+  let dataArray = null;
+  let sourceNode = null;
+  let rafId = null;
+  let faceInterval = null;
+  let modelsLoaded = false;
+
+  // Load face-api models (async but local)
+  async function loadModels() {
+    if (modelsLoaded) return;
+    hud.innerText = 'Status: Loading face models...';
+    const MODEL_URL = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights';
+    try {
+      await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+      await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
+      modelsLoaded = true;
+      hud.innerText = 'Status: Models loaded (ready)';
+    } catch (e) {
+      console.warn('Face models load failed', e);
+      hud.innerText = 'Status: Models failed to load';
+      modelsLoaded = false;
+    }
+  }
+
+  // START camera & mic
+  startBtn.addEventListener('click', async ()=>{
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode:'user' }, audio: true });
+      videoEl.srcObject = stream;
+
+      // audio setup
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      sourceNode = audioCtx.createMediaStreamSource(stream);
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 2048;
+      dataArray = new Uint8Array(analyser.frequencyBinCount);
+      sourceNode.connect(analyser);
+
+      // load face models
+      await loadModels();
+
+      // start loops
+      startAudioLoop();
+      startFaceLoop();
+
+      hud.innerText = 'Status: Running — tracking';
+    } catch (err) {
+      console.error('start failed', err);
+      hud.innerText = 'Status: Permission denied or device error';
+    }
+  });
+
+  // STOP streams & loops
+  stopBtn.addEventListener('click', ()=>{
+    if (stream) {
+      stream.getTracks().forEach(t=>t.stop());
+      stream = null;
+    }
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    if (faceInterval) { clearInterval(faceInterval); faceInterval = null; }
+    if (audioCtx) { try{ audioCtx.close(); }catch(e){} audioCtx=null; }
+    videoEl.srcObject = null;
+    hud.innerText = 'Status: Stopped';
+    applyManual('neutral');
+    setViseme(0);
+  });
+
+  // TTS speak
+  speakBtn.addEventListener('click', ()=>{
+    const text = "Halo, aku robot Level empat. Aku dapat melihat dan merasakan emosimu.";
+    speakText(text);
+  });
+
+  function speakText(txt){
+    if (!('speechSynthesis' in window)) { alert('TTS tidak tersedia'); return; }
+    const utt = new SpeechSynthesisUtterance(txt);
+    utt.lang = 'id-ID';
+    utt.rate = 1.05; utt.pitch = 1.1;
+    utt.onstart = ()=> {
+      // random lip movement while speaking
+      let t = setInterval(()=> {
+        const r = Math.random();
+        if (r < 0.3) setViseme(2);
+        else if (r < 0.7) setViseme(1);
+        else setViseme(0);
+      }, 80);
+      utt.onend = ()=> { clearInterval(t); setViseme(0); }
+    };
+    speechSynthesis.speak(utt);
+  }
+
+  // SIMPLE pitch estimation (auto-correlation)
+  function estimatePitch(timeDomain) {
+    // very coarse pitch via auto-correlation
+    const SIZE = timeDomain.length;
+    let bestOffset = -1; let bestCorr = 0;
+    for (let offset = 20; offset < 1000; offset++) {
+      let corr = 0;
+      for (let i=0; i < SIZE - offset; i++) {
+        corr += Math.abs(timeDomain[i] - timeDomain[i + offset]);
+      }
+      corr = 1 - (corr / (SIZE - offset));
+      if (corr > bestCorr) { bestCorr = corr; bestOffset = offset; }
+    }
+    if (bestCorr > 0.5 && bestOffset > 0) {
+      const sampleRate = audioCtx.sampleRate || 44100;
+      return Math.round(sampleRate / bestOffset);
+    }
+    return 0;
+  }
+
+  // map volume -> viseme (0 closed,1 half,2 open)
+  function levelToViseme(rms) {
+    if (rms < 0.01) return 0;
+    if (rms < 0.035) return 1;
+    return 2;
+  }
+
+  function setViseme(i) {
+    mouthEl.classList.remove('viseme-0','viseme-1','viseme-2');
+    mouthEl.classList.add('viseme-' + i);
+    const vname = i===0? 'closed' : i===1? 'half' : 'open';
+    hud.innerText = `Status: Running — Viseme: ${vname}`;
+  }
+
+  // apply manual mode
+  window.applyManual = (m) => {
+    robot.className = 'robot ' + m;
+    modePill.innerText = 'Mode: ' + m;
+  }
+
+  // face loop: detect face & expressions (runs ~ every 120ms for efficiency)
+  function startFaceLoop(){
+    if (!modelsLoaded) return;
+    faceInterval = setInterval(async ()=>{
+      try {
+        const options = new faceapi.TinyFaceDetectorOptions({ inputSize:128, scoreThreshold:0.6 });
+        const result = await faceapi.detectSingleFace(videoEl, options).withFaceExpressions();
+        if (result) {
+          const box = result.detection.box;
+          // compute center of face in video coordinate (0..1)
+          const cx = box.x + box.width/2;
+          const cy = box.y + box.height/2;
+          const vw = videoEl.videoWidth || videoEl.clientWidth;
+          const vh = videoEl.videoHeight || videoEl.clientHeight;
+          const nx = (cx / vw) * 2 - 1; // -1..1
+          const ny = (cy / vh) * 2 - 1;
+
+          // move eyes based on face position (scale down)
+          eyeL.style.transform = `translate(${nx * -8}px, ${ny * 6}px)`;
+          eyeR.style.transform = `translate(${nx * -6}px, ${ny * 6}px)`;
+
+          // expressions: pick highest
+          const expr = result.expressions;
+          let best = 'neutral'; let bestVal = 0;
+          for (const k in expr) if (expr[k] > bestVal) { bestVal = expr[k]; best = k; }
+          // map face-api label -> our modes
+          const map = { happy:'happy', angry:'angry', disgusted:'angry', sad:'sad', surprised:'surprised', neutral:'neutral', fearful:'angry' };
+          const mode = map[best] || 'neutral';
+          robot.className = 'robot ' + mode;
+          modePill.innerText = 'Mode: ' + mode;
+        } else {
+          // no face: slowly reset eye transforms (or keep last)
+          eyeL.style.transform = `translate(0px, 0px)`;
+          eyeR.style.transform = `translate(0px, 0px)`;
+        }
+      } catch (e) {
+        console.warn('face loop error', e);
+      }
+    }, 120);
+  }
+
+  // audio loop: analyze mic -> viseme + pitch + volume -> emotion heuristics
+  function startAudioLoop(){
+    if (!analyser) return;
+    const timeDomain = new Float32Array(analyser.fftSize);
+    const freqData = new Uint8Array(analyser.frequencyBinCount);
+
+    function loop(){
+      analyser.getFloatTimeDomainData(timeDomain);
+      // RMS
+      let sum = 0;
+      for (let i=0;i<timeDomain.length;i++){ sum += timeDomain[i]*timeDomain[i]; }
+      const rms = Math.sqrt(sum / timeDomain.length);
+      // quick pitch (coarse)
+      const pitch = estimatePitch(timeDomain);
+
+      // viseme
+      const vis = levelToViseme(rms);
+      setViseme(vis);
+
+      // emotion heuristics based on mic volume/pitch (fallback if no face)
+      if (!modelsLoaded) {
+        if (rms < 0.01) { robot.className = 'robot thinking'; modePill.innerText = 'Mode: thinking'; }
+        else if (rms < 0.03) { robot.className = 'robot curious'; modePill.innerText = 'Mode: curious'; }
+        else if (rms < 0.07) { robot.className = 'robot happy'; modePill.innerText = 'Mode: happy'; }
+        else { robot.className = 'robot rage'; modePill.innerText = 'Mode: rage'; }
+      }
+
+      // UI metrics
+      volPill.innerText = 'Vol: ' + rms.toFixed(3);
+      pitchPill.innerText = 'Pitch: ' + (pitch||0) + ' Hz';
+
+      rafId = requestAnimationFrame(loop);
+    }
+    loop();
+  }
+
+  // safety: stop streams on page unload
+  window.addEventListener('beforeunload', ()=>{
+    if (stream) stream.getTracks().forEach(t=>t.stop());
+  });
+
+  // initial neutral
+  applyManual('neutral');
+
+  // pre-load face-api models in background (non-blocking), so start button is faster
+  loadModels().catch(()=>{ /* ignore */ });
+
+})();
+</script>
+</body>
+</html>
