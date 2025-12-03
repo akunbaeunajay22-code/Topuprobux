@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Robot — Voice + Auto Talk + Hologram</title>
+
+<!-- face-api for expression detection -->
+<script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+
+<style>
+  :root{
+    --bg: #08101a;
+    --card:#e9f6ff;
+    --cyan: #00eaff;
+    --red: #ff5b5b;
+    --dark-face:#061015;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background: radial-gradient(800px 400px at 10% 10%, #07202b 0%, transparent 10%), linear-gradient(180deg,#071424,#031019);
+    color:#e6fbff; font-family:Inter,system-ui,Arial;
+  }
+
+  .wrap{ width:1000px; max-width:96%; display:flex; gap:28px; align-items:flex-start; justify-content:center; padding:28px; }
+
+  /* ROBOT + HOLOGRAM */
+  .scene { width:460px; position:relative; display:flex; align-items:center; justify-content:center; flex-direction:column; }
+  .holo-shadow {
+    width:320px; height:40px; background: linear-gradient(90deg, rgba(0,234,255,0.06), rgba(0,234,255,0.18), rgba(0,234,255,0.06));
+    border-radius:50%; filter: blur(12px) saturate(140%); margin-top:12px; position:relative; overflow:hidden;
+  }
+  .holo-shadow::after{
+    content:""; position:absolute; inset:0; background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.04)); mix-blend-mode:overlay;
+    animation: holoScan 2.5s linear infinite;
+  }
+  @keyframes holoScan {
+    0%{ transform: translateX(-120%); opacity:0.1 }
+    50%{ transform: translateX(0%); opacity:0.9 }
+    100%{ transform: translateX(120%); opacity:0.1 }
+  }
+
+  .robot {
+    width:320px; display:flex; align-items:center; justify-content:center; flex-direction:column;
+    transform-origin:center; animation: floaty 4s ease-in-out infinite;
+    position:relative; z-index:5;
+  }
+  @keyframes floaty { 0%{transform:translateY(0)}50%{transform:translateY(-8px)}100%{transform:translateY(0)} }
+
+  .torso { width:280px; height:360px; border-radius:28px; background: linear-gradient(180deg,#eef6fb,#e1e9ef); box-shadow:0 18px 60px rgba(0,0,0,0.45); position:relative; display:flex; align-items:flex-start; justify-content:center; padding-top:20px; }
+
+  /* Head & face */
+  .head { width:220px; height:150px; background:linear-gradient(180deg,#f7fbff,#eaf2f7); border-radius:24px; position:relative; box-shadow: inset 0 -12px 40px rgba(0,0,0,0.06); }
+  .face { width:180px; height:110px; background:var(--dark-face); border-radius:18px; position:absolute; left:50%; transform:translateX(-50%); top:20px; display:flex; align-items:center; justify-content:center; flex-direction:column; box-shadow: inset 0 -18px 50px rgba(0,0,0,0.6); }
+
+  .eyes { width:140px; display:flex; justify-content:space-between; padding:8px 12px; position:relative; }
+  .eye{ width:48px; height:36px; background:var(--cyan); border-radius:50%/72%; box-shadow:0 0 18px rgba(0,234,255,0.18), 0 0 40px rgba(0,234,255,0.06); position:relative; overflow:visible; transition:background .18s, box-shadow .18s; }
+  .eye .pupil { width:18px; height:18px; background:#051e22; border-radius:50%; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); transition: transform .08s linear; }
+  .eyelid{ position:absolute; left:0; top:0; width:100%; height:100%; border-radius:inherit; background:linear-gradient(180deg, rgba(3,6,8,0), rgba(0,0,0,0.6)); transform-origin:center; transform: scaleY(0); transition: transform .06s linear; pointer-events:none;}
+  .eye.blinked .eyelid{ transform: scaleY(1); }
+
+  .mouth { width:46px; height:18px; background:var(--cyan); border-radius:0 0 30px 30px; box-shadow:0 0 14px rgba(0,234,255,0.12); margin-top:6px; transition: height .06s linear, background .18s; transform-origin:top; }
+  .mouth.happy { height:32px; border-radius:0 0 44px 44px; }
+  .mouth.angry { height:12px; background:var(--red); box-shadow:0 0 12px rgba(255,85,85,0.12); border-radius:0 0 12px 12px; }
+
+  /* eyebrows */
+  .brow{ position:absolute; width:56px; height:8px; border-radius:8px; top:30px; left:50%; transform:translateX(-50%); pointer-events:none; opacity:0; }
+  .brow.left{ transform: translate(-56px,-14px); }
+  .brow.right{ transform: translate(56px,-14px); }
+  .brow.angry{ opacity:1; background: linear-gradient(90deg,var(--red), rgba(0,0,0,0)); }
+
+  /* arms */
+  .arm { width:54px; height:160px; background:linear-gradient(180deg,#f5f9fb,#e0e6ea); position:absolute; top:140px; border-radius:40px; box-shadow: inset 0 -8px 20px rgba(0,0,0,0.04); transform-origin:top center; transition: transform .28s; }
+  .arm.left { left:-36px; transform:rotate(8deg); }
+  .arm.right{ right:-36px; transform:rotate(-8deg); }
+  .arm.wave-left{ animation: waveL 1.2s ease-in-out infinite; transform-origin:top left; }
+  .arm.wave-right{ animation: waveR 1.2s ease-in-out infinite; transform-origin:top right; }
+  @keyframes waveL { 0%{transform:rotate(8deg)} 30%{transform:rotate(-26deg)} 60%{transform:rotate(8deg)} 100%{transform:rotate(8deg)} }
+  @keyframes waveR { 0%{transform:rotate(-8deg)} 30%{transform:rotate(26deg)} 60%{transform:rotate(-8deg)} 100%{transform:rotate(-8deg)} }
+
+  /* chest LED */
+  .chestLED{ position:absolute; bottom:26px; left:50%; transform:translateX(-50%); width:160px; height:8px; border-radius:8px; background:linear-gradient(90deg, transparent, rgba(0,234,255,0.6), transparent); box-shadow:0 8px 24px rgba(0,234,255,0.08) }
+
+  /* preview camera */
+  #preview{ position:fixed; right:18px; bottom:18px; width:200px; height:140px; border-radius:10px; overflow:hidden; display:none; border:2px solid rgba(255,255,255,0.03); box-shadow:0 12px 50px rgba(0,0,0,0.5); }
+  #preview video{ width:100%; height:100%; object-fit:cover; transform:scaleX(-1); }
+
+  /* panel controls */
+  .panel { width:420px; background: linear-gradient(180deg,#0b2830,#042028); border-radius:12px; padding:12px; box-shadow:0 12px 50px rgba(0,0,0,0.6); color:#dff9ff; }
+  .panel h3{ margin:6px 0 12px 0; font-size:18px; color:#bff7ff; }
+  .row{ display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+  .btn{ padding:8px 12px; border-radius:8px; background:linear-gradient(90deg,#00eaff,#0096ff); color:#012; border:none; cursor:pointer; font-weight:700; }
+  .btn.ghost{ background:transparent; border:1px solid rgba(255,255,255,0.06); color:#bfefff; }
+  select,input[type="range"]{ background: rgba(255,255,255,0.03); color:#cfeef6; border:1px solid rgba(255,255,255,0.04); padding:8px; border-radius:8px; }
+  small{ color:#98dfe8; }
+
+  /* responsiveness */
+  @media (max-width:980px){ .wrap{ flex-direction:column; align-items:center } .panel{ width:95% } #preview{ display:none } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="scene">
+    <div id="robotGroup" style="display:flex;flex-direction:column;align-items:center;">
+      <div class="robot" id="robot">
+        <div class="torso">
+          <div class="head">
+            <div class="face" id="face">
+              <div class="brow left" id="browL"></div>
+              <div class="brow right" id="browR"></div>
+
+              <div class="eyes">
+                <div class="eye" id="eyeL"><div class="eyelid"></div><div class="pupil"></div></div>
+                <div class="eye" id="eyeR"><div class="eyelid"></div><div class="pupil"></div></div>
+              </div>
+
+              <div class="mouth" id="mouth"></div>
+              <div class="chestLED" id="chestLED"></div>
+            </div>
+
+            <div class="arm left" id="armL"></div>
+            <div class="arm right" id="armR"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="holo-shadow" id="holo"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Kontrol Robot — Voice & Hologram</h3>
+
+    <div class="row">
+      <button class="btn" id="btnToggleCam">Toggle Kamera</button>
+      <button class="btn ghost" id="btnToggleTTS">Toggle Suara</button>
+    </div>
+
+    <div class="row">
+      <label style="min-width:110px">Pilih Suara:</label>
+      <select id="voiceSelect"></select>
+    </div>
+
+    <div class="row">
+      <label style="min-width:110px">Pitch:</label>
+      <input id="pitch" type="range" min="0.4" max="2" step="0.1" value="1">
+      <span id="pitchVal">1</span>
+    </div>
+
+    <div class="row">
+      <label style="min-width:110px">Rate:</label>
+      <input id="rate" type="range" min="0.6" max="1.8" step="0.05" value="1">
+      <span id="rateVal">1</span>
+    </div>
+
+    <div class="row">
+      <label style="min-width:110px">Efek Robotic:</label>
+      <button class="btn ghost" id="toggleRobotic">Off</button>
+    </div>
+
+    <div class="row">
+      <button class="btn ghost" id="calibrate">Kalibrasi Mic</button>
+      <button class="btn" id="speakNow">Tes Bicara</button>
+    </div>
+
+    <hr style="border:none;height:1px;background:rgba(255,255,255,0.03);margin:10px 0">
+
+    <div class="row"><small>Status deteksi: <strong id="status">—</strong></small></div>
+    <div class="row"><small>Tip: izinkan kamera & mic. Robot akan bereaksi otomatis (happy / angry).</small></div>
+  </div>
+</div>
+
+<!-- preview camera -->
+<div id="preview"><video id="cam" autoplay muted playsinline></video></div>
+
+<script>
+/* ---------------------------
+   Globals & DOM
+   --------------------------- */
+const camEl = document.getElementById('cam');
+const preview = document.getElementById('preview');
+const btnToggleCam = document.getElementById('btnToggleCam');
+const btnToggleTTS = document.getElementById('btnToggleTTS');
+const voiceSelect = document.getElementById('voiceSelect');
+const pitchEl = document.getElementById('pitch');
+const rateEl = document.getElementById('rate');
+const pitchVal = document.getElementById('pitchVal');
+const rateVal = document.getElementById('rateVal');
+const toggleRoboticBtn = document.getElementById('toggleRobotic');
+const calibrateBtn = document.getElementById('calibrate');
+const speakNowBtn = document.getElementById('speakNow');
+const statusEl = document.getElementById('status');
+
+const eyeL = document.getElementById('eyeL'), eyeR = document.getElementById('eyeR');
+const pupilEls = document.querySelectorAll('.pupil');
+const mouth = document.getElementById('mouth');
+const browL = document.getElementById('browL'), browR = document.getElementById('browR');
+const armL = document.getElementById('armL'), armR = document.getElementById('armR');
+const chestLED = document.getElementById('chestLED');
+const robot = document.getElementById('robot');
+
+let streamGlobal = null;
+let audioCtx = null, analyser = null, dataArray = null;
+let ttsEnabled = true;
+let lastSpoken = 0, exprCooldown=2000;
+let faceModelsLoaded = false;
+let roboticEffect = false;
+
+/* ---------------------------
+   Speech voices populate
+   --------------------------- */
+function populateVoices(){
+  const voices = speechSynthesis.getVoices();
+  voiceSelect.innerHTML = '';
+  voices.forEach((v,i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = `${v.name} — ${v.lang}`;
+    voiceSelect.appendChild(opt);
+  });
+}
+speechSynthesis.onvoiceschanged = populateVoices;
+
+/* ---------------------------
+   Start media (camera + mic)
+   --------------------------- */
+async function startMedia(){
+  try{
+    const s = await navigator.mediaDevices.getUserMedia({ video:{facingMode:'user', width:360}, audio:true });
+    streamGlobal = s;
+    camEl.srcObject = s;
+    preview.style.display = 'block';
+    // audio analyser
+    initAudioAnalyser(s);
+    // load face models & start loop
+    await loadFaceApiModels();
+    startFaceLoop();
+  }catch(e){
+    console.error('startMedia err', e);
+    alert('Gagal mengakses kamera/mikrofon. Periksa izin.');
+  }
+}
+
+/* ---------------------------
+   Audio analyser (mic volume -> mouth)
+   --------------------------- */
+function initAudioAnalyser(stream){
+  try{
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioCtx.createMediaStreamSource(stream);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 512;
+    source.connect(analyser);
+    const bufferLen = analyser.frequencyBinCount;
+    dataArray = new Uint8Array(bufferLen);
+    (function volLoop(){
+      analyser.getByteFrequencyData(dataArray);
+      let sum = 0;
+      for(let i=0;i<dataArray.length;i++) sum += dataArray[i];
+      let vol = (sum / dataArray.length) / 255; // 0..1
+      vol = Math.min(1, Math.max(0, vol));
+      // smooth with easing
+      const targetH = 10 + vol * 40;
+      mouth.style.height = targetH + 'px';
+      requestAnimationFrame(volLoop);
+    })();
+  }catch(e){ console.warn('Audio analyser init failed', e); }
+}
+
+/* ---------------------------
+   Face API models
+   --------------------------- */
+async function loadFaceApiModels(){
+  if(faceModelsLoaded) return;
+  const weightsBase = 'https://cdn.jsdelivr.net/npm/face-api.js/weights';
+  await faceapi.nets.tinyFaceDetector.loadFromUri(weightsBase);
+  await faceapi.nets.faceExpressionNet.loadFromUri(weightsBase);
+  faceModelsLoaded = true;
+}
+
+/* ---------------------------
+   Face detection loop (auto reaction)
+   --------------------------- */
+let faceLoopTimer = null;
+function startFaceLoop(){
+  if(faceLoopTimer) return;
+  faceLoopTimer = setInterval(async ()=>{
+    if(!camEl || camEl.readyState < 2) return;
+    const res = await faceapi.detectSingleFace(camEl, new faceapi.TinyFaceDetectorOptions()).withFaceExpressions();
+    if(!res){ statusEl.textContent='Tidak terdeteksi'; applyMode('neutral'); return; }
+    const exp = res.expressions || {};
+    const happy = exp.happy || 0;
+    const angry = exp.angry || 0;
+    if(happy > 0.6 && happy > angry){
+      statusEl.textContent = 'Happy';
+      applyMode('happy');
+      autoSpeak('Halo, aku senang melihatmu!', {prefer:'id'});
+    } else if(angry > 0.45 && angry > happy){
+      statusEl.textContent = 'Angry';
+      applyMode('angry');
+      autoSpeak('Aduh, kenapa marah? Tenang dulu.', {prefer:'id', robotic:false});
+    } else {
+      statusEl.textContent = 'Neutral';
+      applyMode('neutral');
+    }
+  }, 420);
+}
+
+/* ---------------------------
+   Mode apply
+   --------------------------- */
+let currentMode = 'neutral';
+function applyMode(m){
+  if(currentMode === m) return;
+  currentMode = m;
+  // reset
+  mouth.classList.remove('happy','angry','talking');
+  browL.classList.remove('angry'); browR.classList.remove('angry');
+  armL.classList.remove('wave-left'); armR.classList.remove('wave-right');
+  setEyesColor('var(--cyan)');
+  chestLED.style.background = 'linear-gradient(90deg, transparent, rgba(0,234,255,0.6), transparent)';
+  if(m==='happy'){
+    mouth.classList.add('happy');
+    armL.classList.add('wave-left'); armR.classList.add('wave-right');
+    setEyesColor('var(--cyan)');
+  } else if(m==='angry'){
+    mouth.classList.add('angry');
+    browL.classList.add('angry'); browR.classList.add('angry');
+    setEyesColor('var(--red)');
+    chestLED.style.background = 'linear-gradient(90deg, transparent, rgba(255,85,85,0.7), transparent)';
+    // quick shake
+    robot.animate([{transform:'translateY(0)'},{transform:'translateY(-6px) rotate(-2deg)'},{transform:'translateY(0)'}], {duration:420, iterations:1});
+  } else {
+    // neutral
+  }
+}
+
+/* helper eyes color */
+function setEyesColor(v){
+  eyeL.style.background = v; eyeR.style.background = v;
+  eyeL.style.boxShadow = `0 0 18px ${v}, 0 0 36px rgba(0,0,0,0.06)`;
+  eyeR.style.boxShadow = `0 0 18px ${v}, 0 0 36px rgba(0,0,0,0.06)`;
+}
+
+/* ---------------------------
+   Auto speak with SpeechSynthesis
+   --------------------------- */
+function autoSpeak(text, options = {}){
+  if(!ttsEnabled) return;
+  const now = Date.now();
+  if(now - lastSpoken < exprCooldown) return;
+  lastSpoken = now;
+
+  const u = new SpeechSynthesisUtterance(text);
+  // voice selection
+  const voices = speechSynthesis.getVoices();
+  const idx = parseInt(voiceSelect.value || 0);
+  if(voices && voices.length && voices[idx]) u.voice = voices[idx];
+  u.rate = parseFloat(rateEl.value);
+  u.pitch = parseFloat(pitchEl.value);
+  if(options.lang) u.lang = options.lang;
+
+  u.onstart = () => {
+    mouth.classList.add('talking');
+    if(roboticEffect) startRoboticOverlay();
+  };
+  u.onend = () => {
+    mouth.classList.remove('talking');
+    if(roboticEffect) stopRoboticOverlay();
+  };
+  u.onerror = ()=> {
+    mouth.classList.remove('talking');
+    if(roboticEffect) stopRoboticOverlay();
+  };
+
+  speechSynthesis.speak(u);
+}
+
+/* ---------------------------
+   Manual speak test
+   --------------------------- */
+document.getElementById('speakNow').addEventListener('click', ()=>{
+  autoSpeak('Halo, ini tes suara robot. Aku siap membantu!', {lang:'id-ID'});
+});
+
+/* ---------------------------
+   TTS toggle
+   --------------------------- */
+let ttsEnabled = true;
+btnToggleTTS.addEventListener('click', ()=> {
+  ttsEnabled = !ttsEnabled;
+  btnToggleTTS.textContent = ttsEnabled ? 'Toggle Suara' : 'Suara Mati';
+});
+
+/* ---------------------------
+   Camera toggle
+   --------------------------- */
+btnToggleCam.addEventListener('click', ()=>{
+  if(preview.style.display === 'none' || preview.style.display === '') {
+    preview.style.display = 'block';
+    if(!streamGlobal) startMedia();
+  } else {
+    preview.style.display = 'none';
+  }
+});
+
+/* ---------------------------
+   Populate voices after load
+   --------------------------- */
+function tryPopulateVoices(){
+  const v = speechSynthesis.getVoices();
+  if(v.length) populate();
+  else setTimeout(tryPopulateVoices, 200);
+}
+function populate(){
+  const voices = speechSynthesis.getVoices();
+  voiceSelect.innerHTML = '';
+  voices.forEach((voice, i)=> {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = `${voice.name} — ${voice.lang}`;
+    voiceSelect.appendChild(opt);
+  });
+}
+tryPopulateVoices();
+
+/* ---------------------------
+   Robotic overlay: simple oscillator (play while speaking)
+   --------------------------- */
+let roboOsc = null, roboGain = null;
+function startRoboticOverlay(){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    roboOsc = audioCtx.createOscillator();
+    roboGain = audioCtx.createGain();
+    // make it subtle: low freq + ring mod
+    roboOsc.type = 'sawtooth';
+    roboOsc.frequency.value = 60; // low tone
+    // slight amplitude modulation
+    const lfo = audioCtx.createOscillator();
+    const lfoGain = audioCtx.createGain();
+    lfo.type = 'sine'; lfo.frequency.value = 4;
+    lfoGain.gain.value = 0.6;
+    lfo.connect(lfoGain);
+    lfoGain.connect(roboGain.gain);
+    roboOsc.connect(roboGain);
+    roboGain.connect(audioCtx.destination);
+    roboGain.gain.value = 0.02; // very low volume
+    lfo.start();
+    roboOsc.start();
+    // store lfo for stopping
+    roboOsc._lfo = lfo;
+  }catch(e){ console.warn('robo overlay failed',e); }
+}
+function stopRoboticOverlay(){
+  try{
+    if(roboOsc){
+      roboOsc._lfo.stop(); roboOsc.stop();
+      roboOsc.disconnect(); roboGain.disconnect();
+      roboOsc = null; roboGain = null;
+    }
+  }catch(e){/*ignore*/ }
+}
+
+/* ---------------------------
+   Blink loop
+   --------------------------- */
+(function startBlink(){
+  setInterval(()=>{
+    [eyeL, eyeR].forEach(e=> e.classList.add('blinked'));
+    setTimeout(()=> [eyeL, eyeR].forEach(e=> e.classList.remove('blinked')), 90 + Math.random()*160);
+  }, 2000 + Math.random()*3000);
+})();
+
+/* ---------------------------
+   Pupils follow mouse
+   --------------------------- */
+window.addEventListener('mousemove', e=>{
+  const px = (e.clientX / window.innerWidth - 0.5) * 18;
+  const py = (e.clientY / window.innerHeight - 0.5) * 12;
+  pupilEls.forEach(p => p.style.transform = `translate(${px}px, ${py}px)`);
+});
+
+/* ---------------------------
+   Calibrate button
+   --------------------------- */
+calibrateBtn.addEventListener('click', ()=> {
+  autoSpeak('Kalibrasi selesai. Sensor suara siap.', {lang:'id-ID'});
+});
+
+/* ---------------------------
+   Toggle robotic effect
+   --------------------------- */
+toggleRoboticBtn.addEventListener('click', ()=>{
+  roboticEffect = !roboticEffect;
+  toggleRoboticBtn.textContent = roboticEffect ? 'On' : 'Off';
+});
+
+/* ---------------------------
+   Start on load (request permissions)
+   --------------------------- */
+startMedia(); // triggers camera+mic & detection
+
+/* cleanup */
+window.addEventListener('beforeunload', ()=>{
+  if(streamGlobal) streamGlobal.getTracks().forEach(t=>t.stop());
+  if(audioCtx) audioCtx.close();
+});
+</script>
+
+</body>
+</html>
