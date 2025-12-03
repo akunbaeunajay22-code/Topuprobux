@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Robot Eilik V8 Full VoicePack</title>
+
+<style>
+  body {
+    margin:0;
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:#88dfff;
+    font-family:sans-serif;
+  }
+
+  .robot-face {
+    width: 330px;
+    height: 260px;
+    background: #000;
+    border-radius: 45%;
+    position: relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    animation: idle 4s ease-in-out infinite;
+    box-shadow: 0 0 40px rgba(0,0,0,0.5),
+                inset 0 0 40px rgba(0,255,255,0.15);
+  }
+
+  @keyframes idle {
+    0% { transform:translateY(0); }
+    50% { transform:translateY(-6px); }
+    100% { transform:translateY(0); }
+  }
+
+  .eye {
+    position:absolute;
+    width:85px;
+    height:55px;
+    background:#2df6ff;
+    border-radius: 60px 60px 35px 35px;
+    filter:drop-shadow(0 0 14px #2df6ff);
+    animation: blink 5s infinite;
+  }
+  .eye.left { left:70px; top:90px; }
+  .eye.right { right:70px; top:90px; }
+
+  @keyframes blink {
+    0%, 92%, 100% { transform:scaleY(1); }
+    95% { transform:scaleY(0.1); }
+  }
+
+  .mouth {
+    position:absolute;
+    top:160px;
+    left:50%;
+    transform:translateX(-50%);
+    width:80px;
+    height:35px;
+    border-bottom:6px solid #2df6ff;
+    border-radius:0 0 60px 60px;
+    filter:drop-shadow(0 0 12px #2df6ff);
+    transition:0.1s ease;
+  }
+
+  .talking {
+    animation: talk 0.15s infinite;
+  }
+
+  @keyframes talk {
+    0% { transform:translateX(-50%) scaleY(1); }
+    50% { transform:translateX(-50%) scaleY(0.4); }
+    100% { transform:translateX(-50%) scaleY(1); }
+  }
+
+  .sleep {
+    background:#001012 !important;
+  }
+</style>
+</head>
+<body>
+
+<div class="robot-face" id="face">
+  <div class="eye left"></div>
+  <div class="eye right"></div>
+  <div class="mouth" id="mouth"></div>
+</div>
+
+<script>
+/* ==========================================================
+          10 VOICEPACK ANAK ROBOT (DIALOG)
+========================================================== */
+const voicepack = {
+  greeting: "Hallo! Aku Eilik kecil! Hehehe. Kamu lagi ngapain?",
+  wakeup: "Hah? Aku bangun! Siapa yang manggil aku? Hehehe.",
+  happy: "Yeay! Aku senang banget hari ini! Terima kasih yaaa!",
+  surprise: "Waaah! Kamu bikin aku kaget! Tapi lucu sih!",
+  angry: "Hmmph! Aku tidak marah... cuma sedikit jengkel! Sedikiiit saja!",
+  sad: "Aku sedih... tapi aku tetap kuat! Hiks...",
+  ai: "Sistem aktif. Mode kecerdasan anak robot diaktifkan.",
+  energy: "Aku penuh energi sekarang! Ayo kita main!",
+  warning: "Peringatan! Peringatan! Hehe bercanda. Semua aman kok!",
+  sleep: "Aku ngantuk banget... aku tidur dulu ya... Zzz..."
+};
+
+/* ==========================================================
+                     SUARA TTS MODE ANAK ROBOT
+========================================================== */
+function speak(text) {
+  const mouth = document.getElementById("mouth");
+  const msg = new SpeechSynthesisUtterance(text);
+
+  msg.pitch = 1.7;
+  msg.rate = 1.05;
+  msg.volume = 1;
+
+  // pilih suara yang mirip anak kecil
+  const voices = speechSynthesis.getVoices();
+  const child = voices.find(v =>
+    v.name.toLowerCase().includes("child") ||
+    v.name.toLowerCase().includes("kid") ||
+    v.name.toLowerCase().includes("female") ||
+    v.name.toLowerCase().includes("young")
+  );
+
+  if (child) msg.voice = child;
+
+  msg.onstart = () => mouth.classList.add("talking");
+  msg.onend   = () => mouth.classList.remove("talking");
+
+  speechSynthesis.speak(msg);
+}
+
+speechSynthesis.onvoiceschanged = () => {};
+
+/* ==========================================================
+                      20+ AI AUTO RESPONSE
+========================================================== */
+function ai(text) {
+  text = text.toLowerCase();
+
+  if (text.includes("halo")) return voicepack.greeting;
+  if (text.includes("bangun") || text.includes("eilik")) return voicepack.wakeup;
+  if (text.includes("senang")) return voicepack.happy;
+  if (text.includes("kaget")) return voicepack.surprise;
+  if (text.includes("marah")) return voicepack.angry;
+  if (text.includes("sedih")) return voicepack.sad;
+  if (text.includes("ai")) return voicepack.ai;
+  if (text.includes("energi")) return voicepack.energy;
+  if (text.includes("warning")) return voicepack.warning;
+  if (text.includes("tidur")) return voicepack.sleep;
+
+  return "Oke, aku mengerti! Hehehe.";
+}
+
+/* ==========================================================
+                      VOICE COMMAND
+========================================================== */
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const recog = new SpeechRecognition();
+recog.lang = "id-ID";
+recog.continuous = true;
+
+let sleepmode = false;
+
+function handleCommand(text) {
+  text = text.toLowerCase();
+
+  // Wakeword
+  if (text.includes("eilik bangun")) {
+    sleepmode = false;
+    document.getElementById("face").classList.remove("sleep");
+    speak(voicepack.wakeup);
+    return;
+  }
+
+  if (sleepmode) return;
+
+  // Sleep mode
+  if (text.includes("tidur")) {
+    sleepmode = true;
+    document.getElementById("face").classList.add("sleep");
+    speak(voicepack.sleep);
+    return;
+  }
+
+  speak(ai(text));
+}
+
+recog.onresult = e => {
+  const t = e.results[e.resultIndex][0].transcript;
+  handleCommand(t);
+};
+
+recog.start();
+</script>
+
+</body>
+</html>
