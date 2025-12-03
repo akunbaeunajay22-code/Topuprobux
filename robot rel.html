@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Robot Eilik V6 - Voice Command</title>
+<style>
+  body {
+    margin:0;
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:#88dfff;
+    font-family:sans-serif;
+  }
+
+  .robot-face {
+    width: 330px;
+    height: 260px;
+    background: #000;
+    border-radius: 45%;
+    position: relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    animation: idle 4s ease-in-out infinite;
+    box-shadow: 0 0 40px rgba(0,0,0,0.5),
+                inset 0 0 40px rgba(0,255,255,0.15);
+  }
+
+  @keyframes idle {
+    0% { transform:translateY(0); }
+    50% { transform:translateY(-6px); }
+    100% { transform:translateY(0); }
+  }
+
+  .eye {
+    position:absolute;
+    width:85px;
+    height:55px;
+    background:#2df6ff;
+    border-radius: 60px 60px 35px 35px;
+    filter:drop-shadow(0 0 14px #2df6ff);
+    transition: .3s ease;
+  }
+  .eye.left { left:70px; top:90px; }
+  .eye.right { right:70px; top:90px; }
+
+  .eye::after {
+    content:"";
+    position:absolute;
+    width:18px;
+    height:10px;
+    background:white;
+    opacity:0.8;
+    top:10px;
+    left:38px;
+    border-radius:50%;
+  }
+
+  /* Blink Random */
+  @keyframes blink {
+    0%, 92%, 100% { transform:scaleY(1); }
+    95% { transform:scaleY(0.1); }
+  }
+
+  /* Mouth */
+  .mouth {
+    position:absolute;
+    top:160px;
+    left:50%;
+    transform:translateX(-50%);
+    width:80px;
+    height:35px;
+    border-bottom:6px solid #2df6ff;
+    border-radius:0 0 60px 60px;
+    filter:drop-shadow(0 0 12px #2df6ff);
+    transition:0.1s ease;
+  }
+
+  /* Talking mouth */
+  .talking {
+    animation: talk 0.15s infinite;
+  }
+
+  @keyframes talk {
+    0% { transform:translateX(-50%) scaleY(1); }
+    50% { transform:translateX(-50%) scaleY(0.4); }
+    100% { transform:translateX(-50%) scaleY(1); }
+  }
+
+  /* Sleep Mode */
+  .sleep {
+    background:#001012 !important;
+  }
+</style>
+</head>
+<body>
+
+<div class="robot-face" id="face">
+  <div class="eye left" id="eyeL"></div>
+  <div class="eye right" id="eyeR"></div>
+  <div class="mouth" id="mouth"></div>
+</div>
+
+<script>
+/* RANDOM BLINK */
+function blinkRandom() {
+  const eyes = document.querySelectorAll('.eye');
+  eyes.forEach(e => e.style.animation = "blink 5s infinite");
+}
+blinkRandom();
+
+/* === TEXT-TO-SPEECH with mouth movement === */
+function speak(text) {
+  const mouth = document.getElementById("mouth");
+  const msg = new SpeechSynthesisUtterance(text);
+
+  msg.pitch = 1.5;
+  msg.rate = 1.1;
+
+  msg.onstart = () => mouth.classList.add("talking");
+  msg.onend = () => mouth.classList.remove("talking");
+
+  speechSynthesis.speak(msg);
+}
+
+/* === VOICE COMMAND (Browser Speech API) === */
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const recog = new SpeechRecognition();
+recog.lang = "id-ID";
+recog.continuous = true;
+recog.interimResults = false;
+
+let sleepmode = false;
+
+/* === WAKEWORD: “Eilik bangun” === */
+function handleCommand(text) {
+  text = text.toLowerCase();
+
+  // Wake
+  if (text.includes("eilik bangun")) {
+    sleepmode = false;
+    document.getElementById("face").classList.remove("sleep");
+    speak("Halo, aku bangun!");
+    return;
+  }
+
+  // If sleeping, ignore commands
+  if (sleepmode) return;
+
+  // Sleep Mode
+  if (text.includes("tidur") || text.includes("sleep")) {
+    sleepmode = true;
+    document.getElementById("face").classList.add("sleep");
+    speak("Selamat tidur");
+    return;
+  }
+
+  // Command reactions
+  if (text.includes("halo")) speak("Halo juga!");
+  if (text.includes("senyum")) speak("Hehe, aku senyum nih");
+  if (text.includes("siapa kamu")) speak("Aku robot imut pembantumu");
+  if (text.includes("imut")) speak("Aku memang imut!");
+  if (text.includes("kaget")) speak("Astaga aku kaget!");
+  if (text.includes("siapa penciptamu")) speak("Dokter pahril atau fare yang ganteng");
+}
+
+recog.onresult = (e) => {
+  const t = e.results[e.resultIndex][0].transcript;
+  handleCommand(t);
+};
+
+recog.start();
+</script>
+
+</body>
+</html>
