@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Robot Face - Voice Command + MIC + EMOSI</title>
+
+<style>
+  :root{
+    --bg:#bff1ff;
+    --face:#030405;
+    --eye:#00f0ef;
+    --glow: 0 0 40px rgba(0,240,239,0.55);
+    --eye-width: 180px;
+    --eye-height: 100px;
+    --face-w: 720px;
+    --face-h: 520px;
+  }
+
+  html,body{
+    height:100%;
+    margin:0;
+    background: var(--bg);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:system-ui;
+  }
+
+  .stage{
+    width:100%;
+    max-width:900px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:40px;
+    flex-direction:column;
+  }
+
+  .mic-btn{
+    margin-top:20px;
+    padding:14px 26px;
+    font-size:18px;
+    border:none;
+    border-radius:12px;
+    cursor:pointer;
+    background:#00a9b8;
+    color:white;
+    transition:0.2s;
+  }
+  .mic-btn.off{ background:#777; }
+
+  .mic-indicator{
+    margin-top:10px;
+    font-size:14px;
+    color:#00444a;
+  }
+
+  .face{
+    width:var(--face-w);
+    height:var(--face-h);
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0.85) 0%, var(--face) 45%, #000 100%);
+    border-radius:50% / 45%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 100px rgba(0,0,0,0.15) inset;
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    filter: drop-shadow(0 20px 40px rgba(0,160,170,0.08));
+    transition:0.3s ease;
+  }
+
+  .visage{ width:86%; display:flex; flex-direction:column; align-items:center; gap:28px; }
+
+  .eyes-row{ width:100%; display:flex; justify-content:space-between; gap:40px; padding:0 60px; }
+
+  /* ======================= MATA ======================= */
+  .eye{
+    --w: var(--eye-width); --h: var(--eye-height);
+    width:var(--w); height:var(--h);
+    background: linear-gradient(180deg, rgba(0,255,245,0.95), rgba(0,240,239,1) 60%);
+    border-radius:48px; position:relative;
+    box-shadow: var(--glow), inset 0 -10px 30px rgba(0,0,0,0.15);
+    display:flex; align-items:center; justify-content:center;
+    transition:0.25s ease;
+  }
+
+  /* Bentuk emosi */
+  .eye.happy { border-radius: 60px 60px 30px 30px; transform: translateY(10px); }
+  .eye.sad   { border-radius: 30px 30px 60px 60px; transform: translateY(-10px); }
+  .eye.angry { transform: rotate(12deg); }
+  .eye.angry.right { transform: rotate(-12deg); }
+  .eye.shock { border-radius: 50%; width:120px; height:120px; }
+  .eye.cute  { width:160px; height:140px; border-radius:50%; }
+
+  .eye::after{
+    content:""; position:absolute; left:0; right:0; bottom:6px;
+    height:22%; background: rgba(255,255,255,0.1); border-radius:0 0 48px 48px;
+  }
+
+  .eyelid{
+    position:absolute; inset:0; background:var(--face);
+    border-radius:inherit; transform-origin:center;
+    transform:scaleY(0);
+  }
+
+  /* Kedip */
+  .eye.blink .eyelid{ animation: blinkCover 160ms linear forwards; }
+  .eye.blink .eyelid.reset{ animation: blinkReveal 220ms linear forwards; animation-delay:120ms; }
+
+  @keyframes blinkCover{ 0%{transform:scaleY(0);} 60%{transform:scaleY(1.02);} 100%{transform:scaleY(1);} }
+  @keyframes blinkReveal{ from{transform:scaleY(1);} to{transform:scaleY(0);} }
+
+  /* ======================= MULUT ======================= */
+  .mouth{
+    width:260px; height:120px; display:block; position:relative;
+    filter: drop-shadow(0 8px 30px rgba(0,240,239,0.18));
+    transition:0.25s ease;
+  }
+
+  /* Emosi mulut */
+  .mouth.happy svg path { d:path("M20 40 Q100 140 180 40"); }
+  .mouth.sad   svg path { d:path("M20 80 Q100 20 180 80"); }
+  .mouth.angry svg path { d:path("M30 70 Q100 40 170 70"); }
+  .mouth.shock svg path { d:path("M90 40 Q100 40 110 40 Q110 110 100 110 Q90 110 90 40"); }
+  .mouth.cute svg path  { d:path("M40 60 Q100 130 160 60"); }
+  .mouth.neutral svg path { d:path("M30 60 Q100 60 170 60"); }
+
+  .mouth.talk svg path{
+    animation: talkAnim 0.12s infinite ease-in-out;
+  }
+  @keyframes talkAnim{
+    0%{ d:path("M30 40 Q100 110 170 40"); }
+    50%{ d:path("M30 50 Q100 130 170 50"); }
+    100%{ d:path("M30 40 Q100 110 170 40"); }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+
+  <div class="face" id="face">
+    <div class="visage">
+      <div class="eyes-row">
+        <div class="eye" id="eye-left"><div class="eyelid"></div></div>
+        <div class="eye right" id="eye-right"><div class="eyelid"></div></div>
+      </div>
+
+      <div class="mouth neutral" id="mouth">
+        <svg viewBox="0 0 200 100">
+          <path id="mouth-path"
+            d="M30 60 Q100 60 170 60"
+            fill="none" stroke="#00f0ef" stroke-width="6" stroke-linecap="round" />
+        </svg>
+      </div>
+
+    </div>
+  </div>
+
+  <button class="mic-btn off" id="micBtn">MIC OFF</button>
+  <div class="mic-indicator" id="micStatus">Mic tidak aktif</div>
+
+</div>
+
+<script>
+/* ========== EMOSI SYSTEM ========== */
+function setEmotion(type){
+  const left = document.getElementById("eye-left");
+  const right = document.getElementById("eye-right");
+  const mouth = document.getElementById("mouth");
+
+  const emotions = ["happy","sad","angry","shock","cute","neutral"];
+  emotions.forEach(e=>{
+    left.classList.remove(e);
+    right.classList.remove(e);
+    mouth.classList.remove(e);
+  });
+
+  left.classList.add(type);
+  right.classList.add(type);
+  mouth.classList.add(type);
+}
+
+/* ==================== 1. KEDIPAN MATA ==================== */
+(function(){
+  const left = document.getElementById('eye-left');
+  const right = document.getElementById('eye-right');
+
+  function bothBlink(){
+    [left,right].forEach(eye=>eye.classList.add('blink'));
+    setTimeout(()=>{ left.children[0].classList.add('reset'); right.children[0].classList.add('reset'); },120);
+    setTimeout(()=>{
+      [left,right].forEach(e=>{ e.classList.remove('blink'); e.children[0].classList.remove('reset'); });
+    },420);
+  }
+
+  function singleBlink(eye){
+    eye.classList.add('blink');
+    setTimeout(()=>eye.children[0].classList.add('reset'),100);
+    setTimeout(()=>{ eye.classList.remove('blink'); eye.children[0].classList.remove('reset'); },380);
+  }
+
+  function loop(){
+    const t = 2000 + Math.random()*3500;
+    setTimeout(()=>{
+      const r = Math.random();
+      if (r < 0.15) singleBlink(Math.random()<0.5? left:right);
+      else bothBlink();
+      loop();
+    }, t);
+  }
+  loop();
+})();
+
+/* ==================== 2. ROBOT TALK (TTS) ==================== */
+const mouth = document.getElementById("mouth");
+
+function robotTalk(text){
+  const u = new SpeechSynthesisUtterance(text);
+  u.pitch = 1.6;
+  u.rate = 1.05;
+  u.volume = 1;
+  u.lang = "id-ID";
+
+  mouth.classList.add("talk");
+  u.onend = ()=> mouth.classList.remove("talk");
+
+  speechSynthesis.speak(u);
+}
+
+/* ==================== 3. MIC SYSTEM ==================== */
+let micOn = false;
+let recognizer;
+
+const micBtn = document.getElementById("micBtn");
+const micStatus = document.getElementById("micStatus");
+
+function startMic(){
+  if(!recognizer){
+    recognizer = new webkitSpeechRecognition();
+    recognizer.lang = "id-ID";
+    recognizer.continuous = true;
+
+    recognizer.onresult = (e)=>{
+      const text = e.results[e.results.length-1][0].transcript.toLowerCase();
+      handleVoiceCommand(text);
+    };
+
+    recognizer.onend = ()=>{ if(micOn) recognizer.start(); };
+  }
+  recognizer.start();
+}
+
+function stopMic(){
+  if(recognizer) recognizer.stop();
+}
+
+micBtn.onclick = ()=>{
+  micOn = !micOn;
+  if(micOn){
+    micBtn.classList.remove("off");
+    micBtn.textContent = "MIC ON";
+    micStatus.textContent = "Mendengarkan...";
+    startMic();
+  } else {
+    micBtn.classList.add("off");
+    micBtn.textContent = "MIC OFF";
+    micStatus.textContent = "Mic tidak aktif";
+    stopMic();
+  }
+};
+
+
+/* ==================== 4. VOICE COMMAND DENGAN EMOSI ==================== */
+function handleVoiceCommand(cmd){
+  cmd = cmd.toLowerCase();
+
+  // COMMAND → EMOSI LANGSUNG
+  if(cmd.includes("robot senyum") || cmd.includes("robot bahagia")) setEmotion("happy");
+  if(cmd.includes("robot sedih")) setEmotion("sad");
+  if(cmd.includes("robot marah")) setEmotion("angry");
+  if(cmd.includes("robot kaget")) setEmotion("shock");
+  if(cmd.includes("robot lucu") || cmd.includes("robot imut")) setEmotion("cute");
+  if(cmd.includes("robot netral")) setEmotion("neutral");
+
+  const commands = [
+    ["robot halo","Halo juga!"],
+    ["robot senyum","Oke aku senyum!"],
+    ["robot sedih","Aku merasa sedih."],
+    ["robot marah","Grrr aku marah!"],
+    ["robot lucu","Hehehe aku lucu!"],
+    ["robot kaget","Wah kaget!"],
+    ["robot imut","Aku super imut!"],
+    ["robot netral","Mode netral aktif."]
+  ];
+
+  for(let i=0; i<commands.length; i++){
+    if(cmd.includes(commands[i][0])){
+      robotTalk(commands[i][1]);
+      return;
+    }
+  }
+
+  robotTalk("Aku mendengar sesuatu tetapi belum paham.");
+}
+
+</script>
+
+</body>
+</html>
