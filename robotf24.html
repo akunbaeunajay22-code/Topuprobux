@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Robot Face - Voice Command + MIC</title>
+<style>
+  :root{
+    --bg:#bff1ff;
+    --face:#030405;
+    --eye:#00f0ef;
+    --glow: 0 0 40px rgba(0,240,239,0.55);
+    --eye-width: 180px;
+    --eye-height: 100px;
+    --face-w: 720px;
+    --face-h: 520px;
+  }
+
+  html,body{
+    height:100%;
+    margin:0;
+    background: var(--bg);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:system-ui;
+  }
+
+  .stage{
+    width:100%;
+    max-width:900px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:40px;
+    flex-direction:column;
+  }
+
+  .mic-btn{
+    margin-top:20px;
+    padding:14px 26px;
+    font-size:18px;
+    border:none;
+    border-radius:12px;
+    cursor:pointer;
+    background:#00a9b8;
+    color:white;
+    transition:0.2s;
+  }
+  .mic-btn.off{ background:#777; }
+
+  .mic-indicator{
+    margin-top:10px;
+    font-size:14px;
+    color:#00444a;
+  }
+
+  .face{
+    width:var(--face-w);
+    height:var(--face-h);
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0.85) 0%, var(--face) 45%, #000 100%);
+    border-radius:50% / 45%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 100px rgba(0,0,0,0.15) inset;
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    filter: drop-shadow(0 20px 40px rgba(0,160,170,0.08));
+  }
+
+  .visage{ width:86%; display:flex; flex-direction:column; align-items:center; gap:28px; }
+
+  .eyes-row{ width:100%; display:flex; justify-content:space-between; gap:40px; padding:0 60px; }
+
+  .eye{
+    --w: var(--eye-width); --h: var(--eye-height);
+    width:var(--w); height:var(--h);
+    background: linear-gradient(180deg, rgba(0,255,245,0.95), rgba(0,240,239,1) 60%);
+    border-radius:48px; position:relative;
+    box-shadow: var(--glow), inset 0 -10px 30px rgba(0,0,0,0.15);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .eye::after{
+    content:""; position:absolute; left:0; right:0; bottom:6px;
+    height:22%; background: rgba(255,255,255,0.1); border-radius:0 0 48px 48px;
+  }
+
+  .eyelid{
+    position:absolute; inset:0; background:var(--face);
+    border-radius:inherit; transform-origin:center;
+    transform:scaleY(0);
+  }
+
+  .eye.blink .eyelid{ animation: blinkCover 160ms linear forwards; }
+  .eye.blink .eyelid.reset{ animation: blinkReveal 220ms linear forwards; animation-delay:120ms; }
+
+  @keyframes blinkCover{ 0%{transform:scaleY(0);} 60%{transform:scaleY(1.02);} 100%{transform:scaleY(1);} }
+  @keyframes blinkReveal{ from{transform:scaleY(1);} to{transform:scaleY(0);} }
+
+  /* mulut */
+  .mouth{
+    width:260px; height:120px; display:block; position:relative;
+    filter: drop-shadow(0 8px 30px rgba(0,240,239,0.18));
+  }
+
+  /* ANIMASI MULUT BERGERAK SAAT ROBOT BICARA */
+  .mouth.talk svg path{
+    animation: talkAnim 0.12s infinite ease-in-out;
+  }
+  @keyframes talkAnim{
+    0%{ d:path("M30 40 Q100 110 170 40"); }
+    50%{ d:path("M30 50 Q100 130 170 50"); }
+    100%{ d:path("M30 40 Q100 110 170 40"); }
+  }
+
+</style>
+</head>
+<body>
+
+<div class="stage">
+
+  <div class="face" id="face">
+    <div class="visage">
+      <div class="eyes-row">
+        <div class="eye" id="eye-left"><div class="eyelid"></div></div>
+        <div class="eye" id="eye-right"><div class="eyelid"></div></div>
+      </div>
+
+      <!-- MULUT -->
+      <div class="mouth" id="mouth">
+        <svg viewBox="0 0 200 100">
+          <path id="mouth-path"
+            d="M30 40 Q100 110 170 40"
+            fill="none" stroke="#00f0ef" stroke-width="6" stroke-linecap="round" />
+        </svg>
+      </div>
+
+    </div>
+  </div>
+
+  <button class="mic-btn off" id="micBtn">MIC OFF</button>
+  <div class="mic-indicator" id="micStatus">Mic tidak aktif</div>
+
+</div>
+
+<script>
+/* ============= 1. SISTEM KEDIPAN ROBOT (ASLI) ================== */
+(function(){
+  const left = document.getElementById('eye-left');
+  const right = document.getElementById('eye-right');
+
+  function bothBlink(){
+    [left,right].forEach(eye=>eye.classList.add('blink'));
+    setTimeout(()=>{ left.children[0].classList.add('reset'); right.children[0].classList.add('reset'); },120);
+    setTimeout(()=>{
+      [left,right].forEach(e=>{ e.classList.remove('blink'); e.children[0].classList.remove('reset'); });
+    },420);
+  }
+
+  function singleBlink(eye){
+    eye.classList.add('blink');
+    setTimeout(()=>eye.children[0].classList.add('reset'),100);
+    setTimeout(()=>{ eye.classList.remove('blink'); eye.children[0].classList.remove('reset'); },380);
+  }
+
+  function loop(){
+    const t = 2000 + Math.random()*3500;
+    setTimeout(()=>{
+      const r = Math.random();
+      if (r < 0.15) singleBlink(Math.random()<0.5? left:right);
+      else bothBlink();
+      loop();
+    }, t);
+  }
+  loop();
+})();
+
+/* ============= 2. SISTEM SUARA + VOICE COMMAND ================== */
+
+let recognizing = false;
+let micOn = false;
+let recognizer;
+
+const micBtn = document.getElementById("micBtn");
+const micStatus = document.getElementById("micStatus");
+const mouth = document.getElementById("mouth");
+
+/* --- TTS (robot bicara) --- */
+function robotTalk(text){
+  const u = new SpeechSynthesisUtterance(text);
+  u.pitch = 1.6;
+  u.rate = 1.05;
+  u.volume = 1;
+  u.lang = "id-ID";
+
+  mouth.classList.add("talk");
+  u.onend = ()=> mouth.classList.remove("talk");
+
+  speechSynthesis.speak(u);
+}
+
+/* --- START MIC --- */
+function startMic(){
+  if(!recognizer){
+    recognizer = new webkitSpeechRecognition();
+    recognizer.lang = "id-ID";
+    recognizer.continuous = true;
+    recognizer.interimResults = false;
+
+    recognizer.onresult = (e)=>{
+      const text = e.results[e.results.length-1][0].transcript.toLowerCase();
+      handleVoiceCommand(text);
+    };
+    recognizer.onend = ()=>{ if(micOn) recognizer.start(); };
+  }
+  recognizer.start();
+  recognizing = true;
+}
+
+/* --- STOP MIC --- */
+function stopMic(){
+  if(recognizer){
+    recognizer.stop();
+    recognizing = false;
+  }
+}
+
+/* --- LOGIKA PERINTAH SUARA ROBOT --- */
+function handleVoiceCommand(cmd){
+
+  if(cmd.includes("robot bangun")){
+    robotTalk("Aku sudah bangun!");
+  }
+
+  else if(cmd.includes("robot halo") || cmd.includes("halo robot")){
+    robotTalk("Halo juga! Ada yang bisa aku bantu?");
+  }
+
+  else if(cmd.includes("robot senyum")){
+    robotTalk("Baik, aku senyum dulu!");
+  }
+
+  else if(cmd.includes("robot tidur")){
+    robotTalk("Oke, aku mode istirahat.");
+  }
+
+  else if(cmd.includes("robot siapa kamu")){
+    robotTalk("Aku robot hologram lucu buatan kamu.");
+  }
+
+  else if(cmd.includes("robot aktifkan emosi")){
+    robotTalk("Emosi diaktifkan!");
+  }
+
+  else if(cmd.includes("robot matikan emosi")){
+    robotTalk("Emosi dimatikan!");
+  }
+
+  else {
+    robotTalk("Aku dengar sesuatu, tetapi belum paham.");
+  }
+}
+
+/* ============= 3. TOMBOL MIC ON / OFF ====================== */
+micBtn.onclick = ()=>{
+  micOn = !micOn;
+  if(micOn){
+    micBtn.classList.remove("off");
+    micBtn.textContent = "MIC ON";
+    micStatus.textContent = "Mendengarkan...";
+    startMic();
+  } else {
+    micBtn.classList.add("off");
+    micBtn.textContent = "MIC OFF";
+    micStatus.textContent = "Mic tidak aktif";
+    stopMic();
+  }
+};
+</script>
+
+</body>
+</html>
