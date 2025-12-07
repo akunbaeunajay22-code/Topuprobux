@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>DarkVerse — hard UI</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg-dark:#070607;
+    --card-red:#b62828;
+    --accent:#ff4b4b;
+    --muted:#aaa;
+    --glass: rgba(255,255,255,0.04);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    min-height:100vh;
+    font-family:'Poppins',sans-serif;
+    background: radial-gradient(circle at 10% 10%, rgba(255,40,40,0.06), transparent 10%),
+                radial-gradient(circle at 90% 90%, rgba(0,0,0,0.6), transparent 20%),
+                var(--bg-dark);
+    color:#fff;
+    overflow:hidden;
+  }
+
+  /* ==== BACKGROUND IMAGE (cover) ==== */
+  .bg-img{
+    position:fixed;
+    inset:0;
+    background-size:cover;
+    background-position:center;
+    filter:brightness(0.35) contrast(1);
+    z-index:0;
+    transition:opacity .4s ease;
+  }
+  .bg-overlay{
+    position:fixed; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.6)); z-index:1;
+  }
+
+  /* NAVBAR */
+  .navbar{
+    position:relative;
+    z-index:10;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:14px 20px;
+    background:linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0.15));
+    border-bottom:1px solid rgba(255,0,0,0.06);
+  }
+  .nav-left{display:flex;gap:12px;align-items:center}
+  .hamburger{font-size:22px;cursor:pointer}
+  .brand{font-weight:600;font-size:20px;letter-spacing:1px}
+  .nav-right{display:flex;gap:10px;align-items:center}
+  .icon-btn{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,0.03);cursor:pointer}
+
+  /* LAYOUT */
+  .wrap{position:relative;z-index:10;display:flex;gap:20px;padding:20px;align-items:flex-start;height:calc(100vh - 74px)}
+  /* SIDEBAR */
+  .sidebar{
+    width:72px;
+    background:linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.25));
+    border-radius:14px;
+    padding:12px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    align-items:center;
+    transition:width .28s ease;
+    overflow:visible;
+  }
+  .sidebar.expanded{width:220px}
+  .sb-item{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;cursor:pointer;background:rgba(255,255,255,0.02)}
+  .sb-label{opacity:.9;margin-left:12px}
+
+  /* MAIN CONTENT */
+  .main{flex:1;display:flex;flex-direction:column;align-items:center;gap:18px;padding-top:8px;overflow:auto}
+  /* PROFILE CARD (hologram) */
+  .profile-card{
+    width:86%;
+    max-width:920px;
+    background: linear-gradient(180deg, rgba(255,40,40,0.14), rgba(255,40,40,0.07));
+    border-radius:18px;
+    padding:22px;
+    display:flex;
+    gap:18px;
+    align-items:center;
+    box-shadow: 0 10px 30px rgba(255,0,0,0.08), 0 0 80px rgba(255,0,0,0.06) inset;
+    border: 1px solid rgba(255,0,0,0.18);
+    position:relative;
+    overflow:visible;
+  }
+  .avatar{
+    width:120px;height:120px;border-radius:20px;flex:0 0 120px;
+    background:linear-gradient(180deg,#310909,#6b1a1a);
+    display:grid;place-items:center;font-weight:700;font-size:12px;
+    box-shadow: 0 8px 30px rgba(255,0,0,0.12);
+    position:relative;
+    border:4px solid rgba(255,255,255,0.04);
+  }
+  .avatar img{width:100%;height:100%;object-fit:cover;border-radius:14px}
+  .profile-info{flex:1}
+  .profile-info h2{margin:0;font-size:26px;letter-spacing:1px;color:var(--accent)}
+  .profile-info .meta{margin-top:6px;color:var(--muted);font-size:13px}
+
+  /* HOLOGRAM LINES (animation) */
+  .holo{
+    position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+    background: repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0 1px, transparent 1px 10px);
+    mix-blend-mode:overlay;opacity:0.12; animation:slide 8s linear infinite;
+  }
+  @keyframes slide{from{background-position-x:0} to{background-position-x:800px}}
+
+  /* FORM BOX */
+  .form-container{width:86%;max-width:920px}
+  .card{
+    background:rgba(0,0,0,0.45);
+    padding:18px;border-radius:18px;border:1px solid rgba(255,40,40,0.08);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+  }
+  .form-row{display:flex;gap:12px;align-items:center}
+  .col{flex:1}
+  label{display:block;color:var(--accent);font-weight:600;margin-bottom:8px}
+  input[type=text],select{width:100%;padding:14px;border-radius:12px;background:transparent;border:1px solid rgba(255,40,40,0.18);color:#fff}
+  select{appearance:none;padding-right:34px}
+  .right-aligned{justify-content:flex-end;display:flex;gap:12px;align-items:center}
+
+  /* send button (neon) */
+  .send-wrap{width:86%;max-width:920px;display:flex;justify-content:center}
+  .send-btn{
+    width:100%;max-width:820px;background:linear-gradient(90deg,var(--accent),#ff7b7b);
+    padding:18px;border-radius:18px;text-align:center;font-size:18px;font-weight:700;cursor:pointer;border:0;
+    box-shadow:0 12px 40px rgba(255,0,0,0.18), 0 0 30px rgba(255,0,0,0.12) inset;
+    position:relative;overflow:visible;
+  }
+  .send-btn .glow{position:absolute;inset:0;border-radius:inherit;filter:blur(28px);opacity:.5;pointer-events:none}
+  .send-btn small{display:block;font-size:12px;opacity:0.92;margin-top:6px}
+
+  /* terminal hacker loading overlay */
+  .overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:200;display:none;align-items:center;justify-content:center;
+  }
+  .terminal{
+    width:90%;max-width:760px;height:320px;background:#020202;border-radius:12px;padding:16px;color:#0f0;box-shadow:0 20px 80px rgba(0,0,0,0.7);
+    display:flex;flex-direction:column;gap:8px;overflow:auto;font-family:monospace;
+  }
+  .term-line{opacity:.95}
+  .term-progress{height:8px;background:rgba(255,255,255,0.04);border-radius:8px;overflow:hidden}
+  .term-progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,#00ff88,#00b3ff);border-radius:8px;transition:width .2s linear}
+
+  /* popup success */
+  .popup{
+    position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
+    background:linear-gradient(180deg,#08120b,#062018);padding:18px;border-radius:12px;border:1px solid rgba(0,255,150,0.06);
+    z-index:220;display:none;min-width:260px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.6)
+  }
+  .popup.ok{border-color:rgba(0,255,150,0.22)}
+  .popup.fail{border-color:rgba(255,80,80,0.22)}
+
+  /* key modal */
+  .modal{
+    position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.65);z-index:210;display:none;
+  }
+  .modal-card{width:360px;background:linear-gradient(180deg,#0b0b0b,#121212);padding:18px;border-radius:12px;border:1px solid rgba(255,0,0,0.06)}
+  .modal-card h3{margin:0 0 8px 0;color:var(--accent)}
+  .hint{font-size:13px;color:var(--muted);margin-bottom:10px}
+
+  /* small controls under profile */
+  .controls{display:flex;gap:10px;align-items:center;margin-top:10px}
+  .upload-btn{padding:8px 12px;border-radius:10px;background:rgba(255,255,255,0.03);cursor:pointer;border:1px solid rgba(255,255,255,0.02)}
+
+  /* list bugs page (hidden pane) */
+  .list-pane{position:fixed;right:-420px;top:80px;width:380px;background:linear-gradient(180deg,#0b0505,#120505);height:70vh;border-radius:14px;padding:14px;border:1px solid rgba(255,0,0,0.08);transition:right .35s ease;z-index:50}
+  .list-pane.open{right:18px}
+  .list-pane h4{margin:0 0 10px 0;color:var(--accent)}
+  .bug-item{padding:10px;border-radius:10px;margin-bottom:8px;background:rgba(255,255,255,0.02);display:flex;justify-content:space-between;align-items:center}
+  .muted{color:var(--muted);font-size:13px}
+
+  /* responsive */
+  @media(max-width:880px){
+    .wrap{flex-direction:column;align-items:center;padding:12px;height:auto}
+    .sidebar{display:none}
+    .profile-card{width:95%}
+    .card{width:95%}
+  }
+</style>
+</head>
+<body>
+
+<!-- BACKGROUND IMAGE: default placeholder; can be changed with upload -->
+<div id="bgimg" class="bg-img" style="background-image:url('https://images.unsplash.com/photo-1505685296765-3a2736de412f?q=80&w=1800&auto=format&fit=crop&s=9d2b6e5b7f5f1d8a');"></div>
+<div class="bg-overlay"></div>
+
+<!-- NAVBAR -->
+<div class="navbar">
+  <div class="nav-left">
+    <div class="hamburger" id="hamb">☰</div>
+    <div class="brand">DarkVerse</div>
+  </div>
+  <div class="nav-right">
+    <div class="icon-btn" id="open-list" title="List Bug">≡</div>
+    <div class="icon-btn" id="profile-open" title="Login Key">🔒</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="sb-item" title="Home">🏠</div>
+    <div class="sb-item" id="toggle-side" title="Expand">➡️</div>
+    <div style="flex:1"></div>
+    <div class="sb-item" id="upload-bg-btn" title="Change Background">🖼️</div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- PROFILE -->
+    <div class="profile-card card">
+      <div class="avatar" id="avatar">
+        <img id="logoImg" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAACWCAYAAABX2i6EAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAGXRFWHRTb2Z0d2FyZQBwYWludC5uZXQgNC4wLjE0QkS2cAAABn1JREFUeF7tnQeQVdUZx//v7m7m7q2m7a2bZtsZt2m2Zt2m6bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bZt2bYt2bYt2bYo8oABZ6AAe2+v9wQwAAAABJRU5ErkJggg==" alt="logo">
+      </div>
+
+      <div class="profile-info">
+        <h2 id="uname">DarkVerse</h2>
+        <div class="meta">Role: <strong>OWNER</strong> • Exp: 2053-03-01</div>
+
+        <div class="controls">
+          <label class="upload-btn">
+            Upload Logo<input id="fileLogo" type="file" accept="image/*" style="display:none">
+          </label>
+          <label class="upload-btn">
+            Upload Background<input id="fileBg" type="file" accept="image/*" style="display:none">
+          </label>
+          <div style="flex:1"></div>
+          <div class="muted">Status Key: <span id="keyStatus">Not logged</span></div>
+        </div>
+      </div>
+
+      <div class="holo"></div>
+    </div>
+
+    <!-- FORM -->
+    <div class="form-container">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div style="font-weight:700;color:var(--accent)">Target Number</div>
+          <div class="muted">Contoh: +62xxxxxxxxxx</div>
+        </div>
+
+        <div class="form-row" style="margin-bottom:12px">
+          <div class="col"><input id="targetNumber" type="text" placeholder="+62xxxxxxxxxx"></div>
+          <div style="flex:0 0 220px">
+            <label style="color:var(--accent);font-weight:600;margin-bottom:6px;display:block">Select Bug</label>
+            <!-- moved dropdown to the right visually by using small width on left -->
+            <select id="bugSelect">
+              <option>CRASH ANDRO</option>
+              <option>CRASH DEVICE</option>
+              <option>SPAM 1000</option>
+              <option>FREEZE MODE</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center">
+          <div class="muted">Pilih mode dan periksa kembali sebelum kirim.</div>
+          <div style="display:flex;gap:8px">
+            <button class="upload-btn" id="openKeyModal">Masuk / Key</button>
+            <button class="upload-btn" id="openListBtn">List Bug</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEND -->
+    <div class="send-wrap">
+      <button class="send-btn" id="sendBtn">
+        <div style="position:relative;z-index:2">⚡ SEND BUG</div>
+        <div class="glow" style="background:linear-gradient(90deg,rgba(255,80,80,0.4),rgba(255,200,200,0.07))"></div>
+        <small id="sendHint"> JANGAN DISALAH GUNAKAN!!</small>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- LIST PANE (right) -->
+<div class="list-pane" id="listPane">
+  <h4>Page List Bug</h4>
+  <div class="bug-item"><div>CRASH ANDRO</div><div class="muted">Stability: High</div></div>
+  <div class="bug-item"><div>CRASH DEVICE</div><div class="muted">Stability: Medium</div></div>
+  <div class="bug-item"><div>SPAM 1000</div><div class="muted">Stability: Low</div></div>
+  <div class="bug-item"><div>FREEZE MODE</div><div class="muted">Stability: Medium</div></div>
+  <div style="height:8px"></div>
+  <div class="muted">Kamu bisa pilih dan coba pada . (UI only)</div>
+</div>
+
+<!-- TERMINAL LOADING OVERLAY -->
+<div class="overlay" id="overlay">
+  <div class="terminal" id="terminal">
+    <div class="term-line">Initializing connection...</div>
+    <div class="term-line">Establishing handshake with target...</div>
+    <div class="term-line" id="termMsg">Preparing payload...</div>
+    <div style="flex:1"></div>
+    <div class="term-progress"><i id="prog"></i></div>
+    <div style="height:6px"></div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:rgba(255,255,255,0.2)"><div id="eta">ETA: --</div><div id="status">STATUS: RUNNING</div></div>
+  </div>
+</div>
+
+<!-- POPUP -->
+<div class="popup" id="popup"><div id="popupMsg"></div></div>
+
+<!-- KEY MODAL -->
+<div class="modal" id="modalKey">
+  <div class="modal-card">
+    <h3>Login Key</h3>
+    <div class="hint">Masukkan key untuk mengaktifkan fungsi. (contoh: <strong>KEY123</strong>)</div>
+    <input id="keyInput" type="text" placeholder="Masukkan Key..." style="width:100%;padding:12px;border-radius:8px;background:#000;border:1px solid rgba(255,255,255,0.04);color:#fff">
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="upload-btn" id="checkKeyBtn">Cek Key</button>
+      <button class="upload-btn" id="closeKeyBtn">Tutup</button>
+    </div>
+    <div style="margin-top:10px"><label class="muted">Order di tiktok Dexlaza</label></div>
+  </div>
+</div>
+
+<!-- HIDDEN FILE INPUTS (for JS triggers) -->
+<input type="file" id="bgUploader" accept="image/*" style="display:none">
+<input type="file" id="logoUploader" accept="image/*" style="display:none">
+
+<script>
+  // ----- state -----
+  const correctKey = "mantap123"; // contoh key
+  let hasKey = false;
+
+  // elements
+  const modal = document.getElementById('modalKey');
+  const keyInput = document.getElementById('keyInput');
+  const keyStatus = document.getElementById('keyStatus');
+  const checkKeyBtn = document.getElementById('checkKeyBtn');
+  const closeKeyBtn  = document.getElementById('closeKeyBtn');
+  const openKeyModal = document.getElementById('openKeyModal');
+  const profileOpen = document.getElementById('profile-open') || document.getElementById('profile-open');
+  const sendBtn = document.getElementById('sendBtn');
+  const overlay = document.getElementById('overlay');
+  const terminal = document.getElementById('terminal');
+  const prog = document.getElementById('prog');
+  const termMsg = document.getElementById('termMsg');
+  const popup = document.getElementById('popup');
+  const popupMsg = document.getElementById('popupMsg');
+  const listPane = document.getElementById('listPane');
+
+  // open key modal handlers
+  document.getElementById('openKeyModal').addEventListener('click', ()=>{ modal.style.display='flex'; keyInput.focus(); });
+  document.getElementById('profile-open').addEventListener('click', ()=>{ modal.style.display='flex'; keyInput.focus(); });
+  closeKeyBtn.addEventListener('click', ()=>{ modal.style.display='none'; });
+
+  checkKeyBtn.addEventListener('click', ()=>{
+    const val = (keyInput.value||"").trim();
+    if(!val){ showTempPopup("Masukkan key dulu", "fail"); return; }
+    if(val === correctKey){
+      hasKey = true;
+      keyStatus.textContent = "Active";
+      modal.style.display='none';
+      showTempPopup("Key benar — akses diaktifkan", "ok");
+    } else {
+      hasKey = false;
+      keyStatus.textContent = "Invalid";
+      shake(keyInput);
+      showTempPopup("Key salah", "fail");
+    }
+  });
+
+  // helper: show popup
+  function showTempPopup(msg, type="ok", ms=2300){
+    popupMsg.textContent = msg;
+    popup.className = "popup " + (type==="ok"?"ok":"fail");
+    popup.style.display = "block";
+    setTimeout(()=>{ popup.style.display='none'; }, ms);
+  }
+
+  // shake animation for wrong key
+  function shake(el){
+    el.style.transition = "transform .05s";
+    el.style.transform = "translateX(-8px)";
+    setTimeout(()=>el.style.transform="translateX(8px)",70);
+    setTimeout(()=>el.style.transform="translateX(-6px)",140);
+    setTimeout(()=>el.style.transform="translateX(6px)",210);
+    setTimeout(()=>el.style.transform="translateX(0px)",280);
+  }
+
+  // SEND button: if no key -> prompt; else show terminal loading -> success
+  sendBtn.addEventListener('click', ()=>{
+    const target = document.getElementById('targetNumber').value.trim();
+    if(!target){
+      showTempPopup("Isi target number terlebih dahulu", "fail"); return;
+    }
+
+    // simulate behavior depending on key
+    if(!hasKey){
+      // play "key salah" animation and quick modal
+      showTempPopup("Key belum aktif. Tekan 'Masuk / Key' untuk login", "fail", 2700);
+      modal.style.display = 'flex';
+      return;
+    }
+
+    // has key -> show hacker loading
+    overlay.style.display = "flex";
+    prog.style.width = "0%";
+    termMsg.textContent = "Preparing payload for " + target + " ...";
+    let p = 0;
+    let eta = 12; // seconds
+    document.getElementById('eta').textContent = "ETA: " + eta + "s";
+    document.getElementById('status').textContent = "STATUS: RUNNING";
+
+    const interval = setInterval(()=>{
+      p += Math.random()*12 + 6; // progress step
+      if(p>100) p=100;
+      prog.style.width = p + "%";
+      termMsg.textContent = "Sending packet chunk... " + Math.round(p) + "%";
+      document.getElementById('eta').textContent = "ETA: " + Math.max(0, Math.round((100-p)/10)) + "s";
+
+      if(p >= 100){
+        clearInterval(interval);
+        // small delay then close overlay and show success popup
+        setTimeout(()=>{
+          overlay.style.display = "none";
+          showTempPopup("Bug terkirim sukses ✅ (Demo)", "ok", 3000);
+        }, 800);
+      }
+    }, 500);
+  });
+
+  // sidebar expand / collapse
+  const sidebar = document.getElementById('sidebar');
+  document.getElementById('toggle-side').addEventListener('click', ()=>{
+    sidebar.classList.toggle('expanded');
+  });
+
+  // list pane toggle
+  document.getElementById('open-list').addEventListener('click', ()=>{ listPane.classList.toggle('open') });
+  document.getElementById('openListBtn').addEventListener('click', ()=>{ listPane.classList.toggle('open') });
+
+  // background upload handlers (uses hidden uploader)
+  document.getElementById('upload-bg-btn').addEventListener('click', ()=>{ document.getElementById('bgUploader').click(); });
+  document.getElementById('bgUploader').addEventListener('change', (e)=>{
+    const f = e.target.files[0]; if(!f) return;
+    const url = URL.createObjectURL(f);
+    document.getElementById('bgimg').style.backgroundImage = `url('${url}')`;
+  });
+
+  // logo upload (two triggers)
+  document.getElementById('fileLogo').addEventListener('change', (e)=>{
+    const f = e.target.files[0]; if(!f) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{ document.getElementById('logoImg').src = reader.result; }
+    reader.readAsDataURL(f);
+  });
+  // also map upload-btn to hidden
+  document.getElementById('fileLogo').parentElement.addEventListener('click', ()=>{ document.getElementById('fileLogo').click(); });
+
+  // separate bg uploader under profile
+  document.getElementById('fileBg').addEventListener('change', (e)=>{
+    const f = e.target.files[0]; if(!f) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{ document.getElementById('bgimg').style.backgroundImage = `url('${reader.result}')`; }
+    reader.readAsDataURL(f);
+  });
+  document.getElementById('fileBg').parentElement.addEventListener('click', ()=>{ document.getElementById('fileBg').click(); });
+
+  // small UX: press ESC to close modals
+  document.addEventListener('keydown', (ev)=>{
+    if(ev.key === "Escape"){
+      modal.style.display='none';
+      listPane.classList.remove('open');
+    }
+  });
+
+  // initial demo hint: animate send hint quickly
+  (function pulseHint(){
+    const el = document.getElementById('sendHint');
+    let on = true;
+    setInterval(()=>{ el.style.opacity = on? '1':'0.6'; on = !on; }, 800);
+  })();
+
+  // Prevent accidental real actions: confirm before "real" action (safety)
+  // NOTE: This UI is purely demonstrative and does not perform any network action.
+</script>
+</body>
+</html>
