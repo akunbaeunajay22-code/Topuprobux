@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attack Crash</title>
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:'Segoe UI',Tahoma,sans-serif;
+}
+
+body{
+  background:#000;
+  color:#fff;
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+}
+
+.container{
+  width:100%;
+  max-width:420px;
+  padding:20px;
+  text-align:center;
+}
+
+.header{
+  font-size:24px;
+  letter-spacing:2px;
+  margin-bottom:15px;
+}
+
+/* BANNER PERSEGI PANJANG */
+.video-banner{
+  width:100%;
+  height:160px;
+  border-radius:18px;
+  overflow:hidden;
+  box-shadow:0 0 25px red;
+  margin-bottom:20px;
+}
+
+.video-banner video{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+.title{
+  font-size:20px;
+  font-weight:bold;
+  margin-bottom:8px;
+}
+
+.line{
+  height:1px;
+  background:#444;
+  margin-bottom:18px;
+}
+
+.box{
+  background:#0a0a0a;
+  border-radius:15px;
+  padding:16px;
+  margin-bottom:16px;
+  box-shadow:inset 0 0 15px #111;
+}
+
+input, select{
+  width:100%;
+  padding:14px;
+  background:transparent;
+  border:1px solid #555;
+  border-radius:12px;
+  color:#fff;
+  outline:none;
+  font-size:14px;
+  transition:.3s;
+}
+
+input:focus{
+  border-color:red;
+  box-shadow:0 0 12px red;
+}
+
+/* SHAKE */
+.shake{ animation:shake .3s; }
+@keyframes shake{
+  0%{transform:translateX(0)}
+  25%{transform:translateX(-4px)}
+  50%{transform:translateX(4px)}
+  75%{transform:translateX(-4px)}
+  100%{transform:translateX(0)}
+}
+
+/* BUTTON */
+.btn{
+  width:100%;
+  padding:15px;
+  border-radius:14px;
+  border:none;
+  background:#fff;
+  color:#000;
+  font-size:16px;
+  font-weight:bold;
+  cursor:pointer;
+  position:relative;
+  overflow:hidden;
+}
+
+.btn:hover{
+  box-shadow:0 0 15px red;
+}
+
+/* LOADING EFFECT */
+.btn.loading{
+  background:#111;
+  color:#fff;
+  cursor:wait;
+  box-shadow:0 0 20px red;
+}
+
+.progress{
+  position:absolute;
+  left:0;
+  top:0;
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg, red, #ff4d4d);
+  animation:load 2.5s linear forwards;
+  z-index:-1;
+}
+
+@keyframes load{
+  from{width:0%}
+  to{width:100%}
+}
+
+.pulse{
+  animation:pulse 1s infinite;
+}
+
+@keyframes pulse{
+  0%{box-shadow:0 0 10px red}
+  50%{box-shadow:0 0 30px red}
+  100%{box-shadow:0 0 10px red}
+}
+
+.note{
+  font-size:12px;
+  color:#888;
+  margin-top:14px;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+  <div class="header">Attack Crash</div>
+
+  <!-- BANNER -->
+  <div class="video-banner">
+    <video autoplay muted loop>
+      <source src="Video.mp4" type="video/mp4">
+    </video>
+  </div>
+
+  <div class="title">Select Target & Bug</div>
+  <div class="line"></div>
+
+  <div class="box">
+    <input id="target" type="text" placeholder="Target number (e.g. +62 812xxxx)">
+  </div>
+
+  <div class="box">
+    <select>
+      <option>Crash Infinity</option>
+      <option>Bug Delay</option>
+      <option>Force Close</option>
+    </select>
+  </div>
+
+  <button class="btn" onclick="sendBug()">
+    <span id="btnText">▶ SEND BUG</span>
+  </button>
+
+  <div class="note">* Developer : @Dexlazahardui</div>
+
+</div>
+
+<script>
+function sendBug(){
+  const input=document.getElementById("target");
+  const btn=document.querySelector(".btn");
+  const text=document.getElementById("btnText");
+
+  if(input.value.trim()===""){
+    input.classList.add("shake");
+    setTimeout(()=>input.classList.remove("shake"),300);
+    return;
+  }
+
+  btn.classList.add("loading","pulse");
+  text.innerText="SENDING...";
+  
+  const progress=document.createElement("div");
+  progress.className="progress";
+  btn.appendChild(progress);
+
+  setTimeout(()=>{
+    btn.classList.remove("loading","pulse");
+    btn.removeChild(progress);
+    text.innerText="▶ SEND BUG";
+    alert("Loading selesai 😎 ");
+  },2600);
+}
+</script>
+
+</body>
+</html>
