@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dexlaza</title>
+
+<style>
+*{box-sizing:border-box;font-family:Arial}
+body{
+margin:0;
+min-height:100vh;
+background:radial-gradient(circle,#3b003b,#000);
+color:#fff;
+}
+
+/* GLOBAL */
+.container{max-width:360px;margin:auto;padding:20px}
+.hidden{display:none}
+
+.btn{
+width:100%;
+padding:15px;
+border:none;
+border-radius:18px;
+font-weight:bold;
+color:#fff;
+background:linear-gradient(45deg,#ff2a2a,#a000ff);
+box-shadow:0 0 20px #ff2a2a;
+cursor:pointer;
+}
+.btn:active{transform:scale(.96)}
+
+.input{
+background:#160016;
+margin:12px 0;
+padding:14px;
+border-radius:15px;
+box-shadow:0 0 12px #400040;
+}
+.input input,select{
+width:100%;
+background:none;
+border:none;
+outline:none;
+color:#fff;
+}
+
+/* LOGIN */
+.logo-box{
+width:100px;height:100px;
+margin:40px auto 15px;
+border-radius:24px;
+background:#140014;
+display:flex;
+align-items:center;
+justify-content:center;
+box-shadow:0 0 25px red;
+}
+.logo-box img{
+width:70px;
+height:70px;
+object-fit:contain;
+}
+
+h2{text-align:center}
+p{text-align:center;color:#aaa;font-size:13px}
+
+/* DASH */
+.avatar{
+providing:relative;
+width:110px;height:110px;
+border-radius:50%;
+margin:25px auto 10px;
+background:#140014;
+display:flex;
+align-items:center;
+justify-content:center;
+box-shadow:0 0 20px #ff2a2a;
+}
+.avatar img{
+width:70px;
+height:70px;
+object-fit:contain;
+}
+
+.role{
+background:#220022;
+padding:6px 14px;
+border-radius:20px;
+font-size:12px;
+width:max-content;
+margin:8px auto;
+}
+
+.banner{
+margin:20px 0;
+border-radius:18px;
+overflow:hidden;
+box-shadow:0 0 20px #300030;
+}
+video{width:100%;display:block}
+
+.loading{
+display:none;
+margin-top:10px;
+text-align:center;
+color:#ff6bff;
+}
+
+/* FOOTER */
+.footer{
+position:fixed;
+bottom:0;left:0;right:0;
+background:#0c000c;
+display:flex;
+justify-content:space-around;
+padding:10px 0;
+box-shadow:0 -5px 20px #300;
+}
+.footer span{opacity:.6}
+.footer span.active{opacity:1;color:#ff6bff}
+
+/* SOUND */
+.sound{
+position:fixed;
+top:10px;right:10px;
+background:#2a002a;
+padding:8px 12px;
+border-radius:20px;
+font-size:12px;
+cursor:pointer;
+box-shadow:0 0 10px #ff2a2a;
+}
+</style>
+</head>
+
+<body>
+
+<div class="sound" onclick="toggleSound()">🔊 Sound ON</div>
+
+<audio id="sLogin" src="https://assets.mixkit.co/sfx/preview/mixkit-game-click-1114.mp3"></audio>
+<audio id="sSend" src="https://assets.mixkit.co/sfx/preview/mixkit-unlock-game-notification-253.mp3"></audio>
+
+<!-- LOGIN -->
+<div class="container" id="login">
+  <div class="logo-box">
+    <img src="avatar.png">
+  </div>
+  <h2>Welcome Back</h2>
+  <p>Sign in to continue</p>
+
+  <div class="input">
+    <input id="user" placeholder="Username">
+  </div>
+  <div class="input">
+    <input id="pass" type="password" placeholder="Password">
+  </div>
+
+  <button class="btn" onclick="doLogin()">Sign In</button>
+</div>
+
+<!-- DASHBOARD -->
+<div class="container hidden" id="dash">
+  <div class="avatar">
+    <img src="avatar.png">
+  </div>
+  <h2 style="text-align:center">DEXLAZA</h2>
+  <div class="role">OWNER • Exp : 2028-09-06</div>
+
+  <div class="banner">
+    <video autoplay loop muted>
+      <source src="virtex.mp4">
+    </video>
+  </div>
+
+  <div class="input">
+    <input placeholder="Nomor Target +62xxxx">
+  </div>
+
+  <div class="input">
+    <select>
+      <option>Pilih Bug</option>
+      <option>UIX HARD BUG</option>
+      <option> Bug Alpha</option>
+      <option> Bug Beta</option>
+    </select>
+  </div>
+
+  <button class="btn" onclick="send()">▶ KIRIM BUG</button>
+  <div class="loading" id="load">Mengirim...</div>
+</div>
+
+<div class="footer">
+  <span class="active">∆</span>
+  <span>=</span>
+  <span>×</span>
+</div>
+
+<script>
+let sound=true;
+function toggleSound(){
+  sound=!sound;
+  document.querySelector(".sound").innerText=sound?"🔊 Sound ON":"🔇 Sound OFF";
+}
+
+function doLogin(){
+  if(user.value==="admin" && pass.value==="admin123"){
+    if(sound)sLogin.play();
+    login.classList.add("hidden");
+    dash.classList.remove("hidden");
+  }else{
+    alert("Username atau Password salah!");
+  }
+}
+
+function send(){
+  if(sound)sSend.play();
+  load.style.display="block";
+  load.innerText="Mengirim bug...";
+  setTimeout(()=>{
+    load.innerText="Bug berhasil dikirim";
+  },2000);
+}
+</script>
+
+</body>
+</html>
