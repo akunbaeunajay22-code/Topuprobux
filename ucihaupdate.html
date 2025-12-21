@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Itaci × Dexlaza UI</title>
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:'Segoe UI',Tahoma,sans-serif;
+}
+
+body{
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:
+    linear-gradient(rgba(0,0,0,.7), rgba(0,0,0,.9)),
+    url("belakang.jpg");
+  background-size:cover;
+  background-position:center;
+  color:#fff;
+  overflow:hidden;
+}
+
+.page{
+  position:absolute;
+  width:100%;
+  height:100%;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  transition:.6s;
+}
+.hidden{
+  opacity:0;
+  pointer-events:none;
+  transform:scale(1.1);
+}
+
+.box{
+  width:360px;
+  background:rgba(10,10,10,.9);
+  backdrop-filter:blur(6px);
+  border-radius:20px;
+  padding:22px;
+  box-shadow:0 0 45px rgba(255,0,0,.4);
+  animation:pop .6s ease;
+}
+@keyframes pop{
+  from{transform:scale(.8);opacity:0}
+  to{transform:scale(1);opacity:1}
+}
+
+.logo{
+  display:flex;
+  justify-content:center;
+  margin-bottom:10px;
+}
+.logo img{
+  width:110px;
+  filter:drop-shadow(0 0 15px red);
+}
+
+.title{
+  text-align:center;
+}
+.title h2{
+  letter-spacing:4px;
+}
+.role{
+  font-size:12px;
+  color:#ff6b6b;
+  margin-top:6px;
+}
+
+.banner{
+  margin:15px 0;
+  border-radius:15px;
+  overflow:hidden;
+  box-shadow:0 0 30px rgba(255,0,0,.4);
+}
+.banner video{
+  width:100%;
+  height:140px;
+  object-fit:cover;
+}
+
+.label{
+  margin-top:12px;
+  font-size:14px;
+  color:#ff6b6b;
+}
+
+input, select{
+  width:100%;
+  padding:12px;
+  margin-top:6px;
+  background:#0f0f0f;
+  border:1px solid #ff3b3b;
+  border-radius:10px;
+  color:#fff;
+  outline:none;
+}
+
+button{
+  width:100%;
+  margin-top:14px;
+  padding:14px;
+  background:linear-gradient(90deg,#ff2b2b,#900000);
+  border:none;
+  border-radius:12px;
+  color:#fff;
+  font-size:15px;
+  cursor:pointer;
+  box-shadow:0 0 25px rgba(255,0,0,.6);
+  transition:.3s;
+}
+button:hover{ transform:scale(1.05); }
+
+.btn-telegram{
+  background:linear-gradient(90deg,#00bfff,#0066ff);
+  box-shadow:0 0 25px rgba(0,150,255,.6);
+}
+
+.btn-logout{
+  background:linear-gradient(90deg,#555,#111);
+  box-shadow:none;
+}
+
+.loading{
+  display:none;
+  text-align:center;
+  margin-top:15px;
+}
+.spinner{
+  width:40px;
+  height:40px;
+  border:4px solid rgba(255,255,255,.2);
+  border-top:4px solid red;
+  border-radius:50%;
+  animation:spin 1s linear infinite;
+  margin:0 auto;
+}
+@keyframes spin{ to{transform:rotate(360deg)} }
+
+.notif{
+  position:fixed;
+  top:20px;
+  right:-320px;
+  background:#111;
+  border-left:5px solid red;
+  padding:14px 18px;
+  border-radius:8px;
+  box-shadow:0 0 25px rgba(255,0,0,.4);
+  transition:.4s;
+  z-index:999;
+}
+.notif.show{ right:20px; }
+.notif.success{ border-color:#00ff99; }
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="loginPage" class="page">
+  <div class="box">
+    <div class="logo"><img src="ss.png"></div>
+
+    <div class="title">
+      <h2>ACCESS KEY</h2>
+      <div class="role">Dexlaza Security System</div>
+    </div>
+
+    <div class="label">Masukkan Key</div>
+    <input id="key" placeholder="XXXX-XXXX-XXXX">
+
+    <button onclick="login()">UNLOCK PANEL</button>
+    <button class="btn-telegram" onclick="orderKey()">📲 ORDER ACCESS KEY</button>
+
+    <div class="loading" id="loadLogin">
+      <div class="spinner"></div>
+      <div style="margin-top:10px;font-size:13px;color:#ff6b6b">
+        Verifying Key...
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashPage" class="page hidden">
+  <div class="box">
+    <div class="logo"><img src="ss.png"></div>
+
+    <div class="title">
+      <h2>Itaci × Dexlaza</h2>
+      <div class="role">Role : OWNER • Exp : PERMANEN</div>
+    </div>
+
+    <div class="banner">
+      <video src="uciha.mp4" autoplay loop muted></video>
+    </div>
+
+    <div class="label">Nomor Target</div>
+    <input id="target" placeholder="+62xxxxxxxxxx">
+
+    <div class="label">Pilih Bug</div>
+    <select id="bug">
+      <option value="">-- Pilih Bug --</option>
+      <option>UIX Crash</option>
+      <option>Delay Visual</option>
+      <option>Freeze Screen</option>
+    </select>
+
+    <button onclick="kirim()">▶ KIRIM BUG</button>
+    <button class="btn-logout" onclick="logout()">LOGOUT</button>
+  </div>
+</div>
+
+<div id="notif" class="notif"></div>
+
+<script>
+const VALID_KEY = "DEXLAZA2026";
+const TELEGRAM_USER = "Dexlazaui"; // ganti username telegram
+
+function notif(text, ok=false){
+  const n = document.getElementById("notif");
+  n.innerText = text;
+  n.className = "notif show" + (ok ? " success":"");
+  setTimeout(()=>n.classList.remove("show"),3000);
+}
+
+function orderKey(){
+  window.open("https://t.me/" + TELEGRAM_USER, "_blank");
+}
+
+function login(){
+  const key = document.getElementById("key").value.trim();
+  const load = document.getElementById("loadLogin");
+
+  if(!key){
+    notif("⚠️ Key belum diisi! Jika tidak punya silakan order di tele @Dexlazaui");
+    return;
+  }
+
+  load.style.display="block";
+  setTimeout(()=>{
+    load.style.display="none";
+    if(key === VALID_KEY){
+      notif("✅ Access Granted", true);
+      loginPage.classList.add("hidden");
+      dashPage.classList.remove("hidden");
+    }else{
+      notif("❌ Key tidak valid!");
+    }
+  },2000);
+}
+
+function logout(){
+  document.getElementById("key").value="";
+  document.getElementById("target").value="";
+  document.getElementById("bug").value="";
+  dashPage.classList.add("hidden");
+  loginPage.classList.remove("hidden");
+  notif("🔒 Berhasil logout");
+}
+
+function kirim(){
+  const nomor = target.value.trim();
+  const bug = document.getElementById("bug").value;
+
+  if(!nomor) return notif("⚠️ Masukan nomor target!");
+  if(!bug) return notif("⚠️ Pilih bug dulu!");
+
+  notif("⏳ Mengirim bug...", true);
+  setTimeout(()=>notif("✅ Bug berhasil dikirim", true),2000);
+}
+</script>
+
+</body>
+</html>
