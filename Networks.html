@@ -1,0 +1,221 @@
+<!DOCTYPE html>  <html lang="id">  
+<head>  
+<meta charset="UTF-8">  
+<meta name="viewport" content="width=device-width, initial-scale=1.0">  
+<title>ASVINALI • GOD MODE</title>  <style>  
+:root{  
+  --neon:#00ffcc;  
+  --bg:#000;  
+  --ab:0px;  
+}  
+*{margin:0;padding:0;box-sizing:border-box;font-family:Consolas,monospace}  
+body{  
+  background:var(--bg);  
+  color:var(--neon);  
+  overflow:hidden;  
+  filter: drop-shadow(var(--ab) 0 red) drop-shadow(calc(var(--ab)*-1) 0 cyan);  
+}  
+  
+/* ===== BACKGROUND ===== */  
+canvas{position:fixed;inset:0;z-index:-3}  
+  
+/* ===== EFFECTS ===== */  
+@keyframes pulse{  
+  0%{box-shadow:0 0 10px var(--neon)}  
+  50%{box-shadow:0 0 40px var(--neon)}  
+  100%{box-shadow:0 0 10px var(--neon)}  
+}  
+.neon{animation:pulse 2s infinite}  
+  
+@keyframes glitch{  
+  0%{text-shadow:2px 0 red,-2px 0 cyan}  
+  50%{text-shadow:-2px 0 magenta,2px 0 lime}  
+  100%{text-shadow:none}  
+}  
+.glitch{animation:glitch .9s infinite}  
+  
+@keyframes shake{  
+  25%{transform:translate(4px,2px)}  
+  50%{transform:translate(-4px,-2px)}  
+  75%{transform:translate(3px,-3px)}  
+}  
+.shake{animation:shake .15s linear 6}  
+  
+/* ===== LOGIN ===== */  
+#login{height:100vh;display:flex;justify-content:center;align-items:center}  
+.box{background:#020202;border:1px solid var(--neon);padding:25px;width:300px;text-align:center}  
+input,button{  
+  width:100%;padding:10px;margin:6px 0;  
+  background:#000;border:1px solid var(--neon);color:var(--neon)  
+}  
+button{cursor:pointer}  
+  
+/* ===== APP ===== */  
+#app{display:none;height:100vh}  
+.nav{display:flex;border-bottom:1px solid var(--neon)}  
+.nav button{flex:1}  
+  
+/* ===== PAGES ===== */  
+.page{display:none;padding:10px}  
+.active{display:block}  
+  
+/* ===== CARDS ===== */  
+.card{border:1px solid var(--neon);padding:10px;margin-bottom:10px;background:#020202}  
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}  
+  
+/* ===== TERMINAL ===== */  
+#terminal{  
+  height:45vh;background:#000;border:1px solid var(--neon);  
+  padding:10px;overflow:auto;font-size:13px  
+}  
+  
+/* ===== PROGRESS ===== */  
+#progress{width:100%;height:8px;background:#022;margin-top:6px}  
+#bar{  
+  width:0%;height:100%;  
+  background:linear-gradient(90deg,cyan,magenta,lime);  
+  box-shadow:0 0 20px var(--neon);  
+  transition:.4s  
+}  
+  
+/* ===== TOP ===== */  
+.top{display:flex;justify-content:space-between;font-size:12px;opacity:.85}  
+  
+/* ===== SLIDER ===== */  
+input[type=range]{width:100%}  
+.badge{font-size:11px;opacity:.8}  
+</style>  </head>  <body>  <canvas id="matrix"></canvas>
+
+<!-- LOGIN -->  <div id="login">  
+  <div class="box neon">  
+    <h3 class="glitch">ASVINALI</h3>  
+    <input id="u" placeholder="Username">  
+    <input id="p" type="password" placeholder="Password">  
+    <button onclick="doLogin()">LOGIN</button>  
+  </div>  
+</div>  <!-- APP -->  <div id="app">  
+  <div class="nav neon">  
+    <button onclick="showPage('dash')">DASHBOARD</button>  
+    <button onclick="showPage('bug')">KENON NOMOR</button>  
+    <button onclick="logout()">EXIT</button>  
+  </div>    <!-- DASHBOARD -->    <div id="dash" class="page active">  
+    <div class="top">  
+      <div id="clock"></div>  
+      <div>FPS <span id="fps">60</span></div>  
+    </div>  <div class="grid">  
+  <div class="card neon">  
+    <h4 class="glitch">AI CORE</h4>  
+    <p>Status: <span id="ai">THINKING…</span></p>  
+    <p class="badge">Neural Load: <span id="load">72%</span></p>  
+  </div>  
+  <div class="card neon">  
+    <h4>NETWORK</h4>  
+    <p>IP: <span id="ip"></span></p>  
+    <p>Country: <span id="cty"></span></p>  
+    <p>Ping: <span id="ping"></span> ms</p>  
+  </div>  
+</div>  
+
+<div class="card">  
+  <h4>PERFORMANCE</h4>  
+  <input type="range" min="0" max="100" value="70" oninput="perf(this.value)">  
+  <div class="badge">Low → Ultra</div>  
+</div>  
+
+<div class="card">  
+  <h4>GOD MODE</h4>  
+  <button onclick="god()">ACTIVATE</button>  
+  <button onclick="theme('#00ffcc')">CYAN</button>  
+  <button onclick="theme('#ff00ff')">PURPLE</button>  
+  <button onclick="theme('#ff0033')">RED</button>  
+</div>  
+
+<div class="card">  
+  <h4>LIVE LOG</h4>  
+  <div id="live" class="badge"></div>  
+</div>
+
+  </div>    <!-- BUG -->    <div id="bug" class="page">  
+    <input id="target" placeholder="Target">  
+    <button onclick="send()">GASS</button>  
+    <div id="terminal"></div>  
+    <div id="progress"><div id="bar"></div></div>  
+  </div>  
+</div>  <script>  
+/* ===== LOGIN ===== */  
+function doLogin(){  
+  if(u.value==="admin"&&p.value==="12345"){  
+    login.style.display="none";app.style.display="block";  
+  }else document.body.classList.add("shake");  
+}  
+function logout(){location.reload()}  
+function showPage(p){  
+  document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));  
+  document.getElementById(p).classList.add("active");  
+}  
+  
+/* ===== THEME ===== */  
+function theme(c){document.documentElement.style.setProperty("--neon",c)}  
+  
+/* ===== GOD MODE ===== */  
+function god(){  
+  document.body.classList.add("glitch","shake");  
+  let a=0;  
+  const rgb=setInterval(()=>{  
+    document.documentElement.style.setProperty("--neon",`hsl(${a},100%,60%)`);  
+    document.documentElement.style.setProperty("--ab","1px");  
+    a+=8;  
+  },60);  
+  setTimeout(()=>clearInterval(rgb),5000);  
+}  
+  
+/* ===== PERF ===== */  
+function perf(v){  
+  fps.innerText=Math.floor(30+v*0.4);  
+  document.documentElement.style.setProperty("--ab",v>70?"1px":"0px");  
+}  
+  
+/* ===== TERMINAL ===== */  
+const term=document.getElementById("terminal");  
+function type(t){  
+  let i=0; const d=document.createElement("div"); term.appendChild(d);  
+  const k=setInterval(()=>{d.textContent+=t[i++]; term.scrollTop=term.scrollHeight; if(i>=t.length)clearInterval(k)},18);  
+}  
+  
+/* ===== SEND DEMO ===== */  
+function send(){  
+  if(!target.value)return alert("Input target");  
+  term.innerHTML=""; bar.style.width="0%"; document.body.classList.add("shake");  
+  const s=["Init core…","Resolve target…","Scan vectors…","Execute…","Finalize…"];  
+  let i=0; const r=setInterval(()=>{  
+    type("> "+s[i]); bar.style.width=((i+1)/s.length*100)+"%"; i++;  
+    if(i===s.length){clearInterval(r); type("> DONE SUCCES"); god();}  
+  },700);  
+}  
+  
+/* ===== CLOCK / FAKE DATA ===== */  
+setInterval(()=>clock.textContent=new Date().toLocaleTimeString(),1000);  
+setInterval(()=>{  
+  ai.textContent=["THINKING…","ANALYZING…","OPTIMIZING…"][Math.random()*3|0];  
+  load.textContent=(60+Math.random()*30|0)+"%";  
+  ip.textContent=`192.168.${Math.random()*255|0}.${Math.random()*255|0}`;  
+  cty.textContent=["ID","SG","US","JP","DE"][Math.random()*5|0];  
+  ping.textContent=20+Math.random()*80|0;  
+  live.textContent="["+new Date().toLocaleTimeString()+"] background process running…";  
+},1500);  
+  
+/* ===== MATRIX ===== */  
+const c=document.getElementById("matrix"),x=c.getContext("2d");  
+c.width=innerWidth;c.height=innerHeight;  
+const ch="ASVINALI",sz=14,cl=c.width/sz,dp=Array(cl|0).fill(1);  
+setInterval(()=>{  
+  x.fillStyle="rgba(0,0,0,.05)"; x.fillRect(0,0,c.width,c.height);  
+  x.fillStyle=getComputedStyle(document.documentElement).getPropertyValue("--neon");  
+  x.font=sz+"px monospace";  
+  dp.forEach((y,i)=>{  
+    x.fillText(ch[Math.random()*ch.length|0],i*sz,y*sz);  
+    if(y*sz>c.height&&Math.random()>0.97)dp[i]=0; dp[i]++;  
+  });  
+},50);  
+</script>  </body>  
+</html>  Tambahkan sound musik mp4 buatkan
