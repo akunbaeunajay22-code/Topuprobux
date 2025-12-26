@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyber Dashboard Premium</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+ --bg:#04070f;--panel:#0b1022;--glass:rgba(12,18,36,.65);
+ --neon:#00f7ff;--vio:#7c7cff;--txt:#eaf0ff;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:Poppins;color:var(--txt);}
+body{background:linear-gradient(180deg,var(--panel),var(--bg));overflow:hidden;}
+
+/* Canvas */
+canvas{position:fixed;inset:0;z-index:-2}
+
+/* Glass Panels */
+.glass{
+ background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02)),var(--glass);
+ backdrop-filter:blur(14px);
+ border:1px solid rgba(255,255,255,.18);
+ box-shadow:0 20px 40px rgba(0,0,0,.4);
+}
+
+/* Button */
+.btn{
+ border:none;cursor:pointer;color:#001;font-weight:600;
+ padding:14px;border-radius:16px;width:100%;
+ background:linear-gradient(90deg,var(--neon),var(--vio));
+ box-shadow:0 0 30px rgba(0,247,255,.7);
+ transition:.2s;
+}
+.btn:hover{transform:scale(1.05);box-shadow:0 0 50px rgba(0,247,255,.9);}
+
+/* Input */
+input{
+ width:100%;padding:12px;border-radius:14px;
+ background:#02040a;color:var(--txt);
+ border:1px solid rgba(0,247,255,.35);
+}
+
+/* Intro */
+#intro{
+ position:fixed;inset:0;background:#000;
+ display:flex;align-items:center;justify-content:center;z-index:10;
+}
+.term{padding:18px;border-radius:18px;width:90%;max-width:520px}
+.term h3{margin:0 0 8px;font-family:Orbitron;color:var(--neon)}
+.cursor{display:inline-block;width:8px;height:16px;background:#9ffcff;animation:blink 1s infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* App */
+#app{display:none;height:100vh}
+.content{padding:16px;height:calc(100vh - 64px);overflow:auto}
+.nav{
+ position:fixed;bottom:0;left:0;right:0;height:64px;
+ display:flex;justify-content:space-around;align-items:center;
+ background:rgba(2,4,10,.85);
+ border-top:1px solid rgba(0,247,255,.3);
+}
+.nav button{
+ background:none;border:none;color:var(--txt);opacity:.6;
+ font-family:Orbitron;
+}
+.nav button.active{opacity:1;color:var(--neon)}
+
+.title{
+ font-family:Orbitron;font-size:22px;
+ background:linear-gradient(90deg,var(--neon),var(--vio));
+ -webkit-background-clip:text;
+ -webkit-text-fill-color:transparent;
+}
+
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));}
+
+.card{padding:14px;border-radius:18px;transition:transform .15s ease;}
+.num{font-family:Orbitron;font-size:26px;color:var(--neon)}
+
+/* Bug */
+.item{margin-top:8px;padding:10px;border-radius:14px;display:flex;gap:10px;align-items:center;border:1px solid rgba(124,124,255,.3);}
+.item input{accent-color:var(--neon)}
+.progress{display:none;height:10px;border-radius:20px;overflow:hidden;margin-top:10px;background:#02040a;border:1px solid rgba(0,247,255,.35)}
+.fill{height:100%;width:0%;background:linear-gradient(90deg,var(--neon),var(--vio));animation:load 2s linear forwards}
+@keyframes load{to{width:100%}}
+
+/* Toast */
+.toast{position:fixed;top:20px;right:20px;padding:14px 22px;border-radius:20px;font-family:Orbitron;background:linear-gradient(90deg,#020b14,#001);border:1px solid var(--neon);box-shadow:0 0 30px rgba(0,247,255,.8);animation:slide .5s ease;}
+@keyframes slide{from{opacity:0;transform:translateX(60px)} to{opacity:1}}
+
+/* Cursor Neon */
+#cursor{position:fixed;width:22px;height:22px;border-radius:50%;pointer-events:none;z-index:9999;background:radial-gradient(circle,#00f7ff,transparent 70%);filter:blur(2px);mix-blend-mode:screen;transform:translate(-50%,-50%);}
+
+/* FPS */
+#fps{position:fixed;left:10px;bottom:80px;padding:6px 12px;border-radius:12px;font-family:Orbitron;font-size:12px;}
+
+/* GRAPH */
+#graph{position:fixed;bottom:80px;right:20px;width:200px;height:100px;background:rgba(0,0,0,.2);border-radius:12px;z-index:999;}
+</style>
+</head>
+<body>
+
+<canvas id="matrix"></canvas>
+<canvas id="particles"></canvas>
+<canvas id="starfield"></canvas>
+
+<div id="cursor"></div>
+<div id="fps" class="glass">FPS</div>
+<div id="graph" class="glass"></div>
+
+<!-- LOGIN -->
+<div id="login" class="glass" style="position:fixed;inset:0;margin:auto;width:300px;height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20;">
+ <h3>Login Premium</h3>
+ <input id="user" placeholder="Username"><br>
+ <input id="key" placeholder="Access Key"><br>
+ <button class="btn" onclick="checkLogin()">Login</button>
+ <p id="msg" style="margin-top:10px;font-size:14px;color:#f77;"></p>
+</div>
+
+<!-- APP -->
+<div id="app">
+ <div class="content">
+
+  <div id="page-dashboard">
+   <div class="title">CYBER DASHBOARD</div>
+   <div class="grid" style="margin-top:14px">
+    <div class="card glass"><div>Total Target</div><div class="num" id="s1">120</div></div>
+    <div class="card glass"><div>Bug Terkirim</div><div class="num" id="s2">640</div></div>
+    <div class="card glass"><div>Status</div><div class="num">ONLINE</div></div>
+   </div>
+  </div>
+
+  <div id="page-bug" style="display:none">
+   <div class="card glass">
+    <h3>BUG TARGET (PILIH 1)</h3>
+    <input id="target" placeholder="62xxxxxxxxxx">
+    <div class="item"><input type="radio" name="bug" value="Crash UI">Crash UI</div>
+    <div class="item"><input type="radio" name="bug" value="Delay Message">Delay Message</div>
+    <div class="item"><input type="radio" name="bug" value="Blank Chat">Blank Chat</div>
+    <div class="item"><input type="radio" name="bug" value="Freeze Screen">Freeze Screen</div>
+    <button class="btn" onclick="send()">SEND BUG</button>
+    <div class="progress" id="prog"><div class="fill"></div></div>
+   </div>
+  </div>
+
+ </div>
+
+ <div class="nav">
+  <button class="active" onclick="nav('dashboard',this)">Dashboard</button>
+  <button onclick="nav('bug',this)">Bug</button>
+ </div>
+</div>
+
+<script>
+/* LOGIN SYSTEM */
+const PREMIUM_KEYS=["ABC123","XYZ789","CYBER2025"];
+function checkLogin(){
+ const u=document.getElementById('user').value;
+ const k=document.getElementById('key').value;
+ const msg=document.getElementById('msg');
+ if(PREMIUM_KEYS.includes(k)){
+  msg.style.color="#0f0"; msg.textContent="Login Success! Welcome "+u;
+  login.style.display="none"; app.style.display="block";
+  notify("ACCESS PREMIUM GRANTED");
+ }else{msg.style.color="#f77"; msg.textContent="Invalid Key!"}
+}
+
+/* NAV */
+function nav(p,el){
+ document.getElementById('page-dashboard').style.display=p==='dashboard'?'block':'none';
+ document.getElementById('page-bug').style.display=p==='bug'?'block':'none';
+ document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+ el.classList.add('active');
+}
+
+/* SEND */
+function send(){
+ const bug=document.querySelector('input[name="bug"]:checked');
+ if(!target.value||!bug) return alert('Lengkapi target & bug!');
+ prog.style.display='block';prog.innerHTML='<div class="fill"></div>';
+ playSound();
+ setTimeout(()=>{
+  prog.style.display='none';
+  notify("BUG TERKIRIM : "+bug.value);
+ },2000);
+}
+
+/* NOTIFY */
+function notify(txt){
+ const n=document.createElement('div');
+ n.className='toast';
+ n.textContent=txt;
+ document.body.appendChild(n);
+ setTimeout(()=>n.remove(),2600);
+}
+
+/* PLAY HACKER SOUND */
+function playSound(){
+ const ctx=new (window.AudioContext||window.webkitAudioContext)();
+ const o=ctx.createOscillator();
+ o.type='square';o.frequency.setValueAtTime(400,ctx.currentTime);
+ o.connect(ctx.destination);o.start();
+ o.stop(ctx.currentTime+0.05);
+}
+
+/* MATRIX */
+const m=document.getElementById('matrix'),c=m.getContext('2d');
+m.width=innerWidth;m.height=innerHeight;
+const chars="01ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const drops=Array(Math.floor(m.width/14)).fill(1);
+setInterval(()=>{
+ c.fillStyle="rgba(0,0,0,.1)";
+ c.fillRect(0,0,m.width,m.height);
+ c.fillStyle="#00f7ff";c.font="14px monospace";
+ drops.forEach((y,i)=>{
+  const t=chars[Math.floor(Math.random()*chars.length)];
+  c.fillText(t,i*14,y*14);
+  drops[i]=y*14>m.height||Math.random()>0.96?0:y+1;
+ });
+},40);
+
+/* PARTICLES */
+const p=document.getElementById('particles'),px=p.getContext('2d');
+p.width=innerWidth;p.height=innerHeight;
+let dots=[...Array(60)].map(()=>({x:Math.random()*p.width,y:Math.random()*p.height,r:Math.random()*2+1,v:Math.random()+.4}));
+setInterval(()=>{
+ px.clearRect(0,0,p.width,p.height);
+ dots.forEach(d=>{
+  px.beginPath();
+  px.arc(d.x,d.y,d.r,0,Math.PI*2);
+  px.fillStyle="rgba(0,247,255,.6)";
+  px.fill();
+  d.y-=d.v;if(d.y<0)d.y=p.height;
+ });
+},30);
+
+/* CURSOR */
+const cur=document.getElementById('cursor');
+document.addEventListener('mousemove',e=>{
+ cur.style.left=e.clientX+'px';
+ cur.style.top=e.clientY+'px';
+});
+
+/* FPS */
+let last=performance.now(),frames=0;
+(function fps(now){
+ frames++;
+ if(now-last>=1000){
+  document.getElementById('fps').textContent='FPS : '+frames;
+  frames=0;last=now;
+ }
+ requestAnimationFrame(fps);
+})(performance.now());
+
+/* 3D STARFIELD */
+const sf=document.getElementById('starfield'),sfc=sf.getContext('2d');
+sf.width=innerWidth;sf.height=innerHeight;
+let stars=[...Array(300)].map(()=>({x:Math.random()*sf.width- sf.width/2, y:Math.random()*sf.height- sf.height/2, z:Math.random()*sf.width}));
+function drawStars(){
+ sfc.fillStyle="black"; sfc.fillRect(0,0,sf.width,sf.height);
+ stars.forEach(s=>{
+  s.z-=4;
+  if(s.z<=0) s.z=sf.width;
+  const x=(s.x/s.z)*sf.width/2 + sf.width/2;
+  const y=(s.y/s.z)*sf.width/2 + sf.height/2;
+  const r=2*(sf.width/s.z);
+  sfc.fillStyle="#00f7ff"; sfc.beginPath(); sfc.arc(x,y,r,0,2*Math.PI); sfc.fill();
+ });
+ requestAnimationFrame(drawStars);
+}
+drawStars();
+
+/* GRAPH */
+const g=document.getElementById('graph'),gc=g.getContext('2d');
+let data=[];
+function updateGraph(){
+ data.push(Math.random()*100);
+ if(data.length>50) data.shift();
+ gc.clearRect(0,0,g.width,g.height);
+ gc.beginPath();
+ gc.moveTo(0,g.height-data[0]);
+ data.forEach((v,i)=>gc.lineTo(i*4,g.height-v));
+ gc.strokeStyle='#00f7ff'; gc.lineWidth=2;
+ gc.stroke();
+ requestAnimationFrame(updateGraph);
+}
+updateGraph();
+</script>
+</body>
+</html>
